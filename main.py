@@ -26,6 +26,19 @@ db = client.get_database("zim_grocery")
 user_states_collection = db.user_states
 orders_collection = db.orders
 
+# TTL index set for user state expiry
+def setup_ttl_index():
+    indexes = user_states_collection.index_information()
+    if 'expires_at_ttl' not in indexes:
+        user_states_collection.create_index(
+            'expires_at',
+            expireAfterSeconds=60,
+            name='expires_at_ttl'
+        )
+
+setup_ttl_index()
+
+
 class User:
     def __init__(self, payer_name, payer_phone):
         self.payer_name = payer_name
