@@ -112,12 +112,12 @@ def handle_choose_category(prompt, user_data, phone_id):
     order_system = OrderSystem()
     if prompt.isalpha() and len(prompt) == 1:
         idx = ord(prompt.upper()) - 65
-        categories = order_system.list_categories()
-        if 0 <= idx < len(categories):
-            cat = categories[idx]
+        categories = order_system.list_products()
+        if 0 <= idx < len(products):
+            cat = products[idx]
             update_user_state(user_data['sender'], {
                 'selected_category': cat,
-                'step': 'choose_product'
+                'step': 'handle_choose_product'
             })
             send(f"Products in {cat}:\n{list_products(cat)}\nSelect a product by number.", user_data['sender'], phone_id)
             return {'step': 'choose_product', 'selected_category': cat}
