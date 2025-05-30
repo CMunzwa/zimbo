@@ -234,7 +234,7 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         }
     elif prompt in ["add", "add item", "add another", "add more"]:
         update_user_state(user_data['sender'], {'step': 'choose_product'})
-        send("Sure! Here are the available categories:\n" + list_categories(), user_data['sender'], phone_id)
+        send("Sure! Here are the available categories:\n" + list_products(), user_data['sender'], phone_id)
         return {'step': 'choose_product', 'user': user.to_dict()}
     else:
         send("Sorry, I didn't understand. You can:\n- View Cart\n- Clear Cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
