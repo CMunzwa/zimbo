@@ -108,7 +108,7 @@ def handle_save_name(prompt, user_data, phone_id):
     send(f"Thanks {user.payer_name}! Please select a category:\n{list_categories()}", user_data['sender'], phone_id)
     return {'step': 'choose_product', 'user': user.to_dict()}
 
-def handle_choose_product(prompt, user_data, phone_id):
+def handle_choose_category(prompt, user_data, phone_id):
     order_system = OrderSystem()
     if prompt.isalpha() and len(prompt) == 1:
         idx = ord(prompt.upper()) - 65
@@ -123,10 +123,10 @@ def handle_choose_product(prompt, user_data, phone_id):
             return {'step': 'choose_product', 'selected_category': cat}
         else:
             send("Invalid category. Try again:\n" + list_categories(), user_data['sender'], phone_id)
-            return {'step': 'choose_product'}
+            return {'step': 'choose_category'}
     else:
         send("Please enter a valid category letter (e.g., A, B, C).", user_data['sender'], phone_id)
-        return {'step': 'choose_product'}
+        return {'step': 'choose_category'}
 
 def handle_choose_product(prompt, user_data, phone_id):
     try:
@@ -502,7 +502,6 @@ def send(answer, sender, phone_id):
 action_mapping = {
     "ask_name": handle_ask_name,
     "save_name": handle_save_name,
-    "choose_product": handle_choose_product,
     "choose_product": handle_choose_product,
     "ask_quantity": handle_ask_quantity,
     "post_add_menu": handle_post_add_menu,
