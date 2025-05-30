@@ -3,11 +3,14 @@ import logging
 import requests
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from orders import OrderSystem, Product
+
+
+SESSION_EXPIRY_MINUTES = 60
 
 
 logging.basicConfig(level=logging.INFO)
@@ -443,14 +446,22 @@ def handle_default(prompt, user_data, phone_id):
     return {'step': user_data.get('step', 'ask_name')}
 
 # Utility functions
-def get_user_state(phone_number):
-    state = user_states_collection.find_one({'phone_number': phone_number})
-    if state:
-        state['_id'] = str(state['_id'])  # Convert ObjectId to string
-        return state
-    return {'step': 'ask_name', 'sender': phone_number}
+
+def get_user_state(sender_id):
+    user_state = user_states_collection.find_one({'sender': sender_id})
+    if user_state:
+        last_updated = user_state.get('last_updated')
+        if last_updated:
+            age = datetime.utcnow() - last_updated
+            if age > timedelta(minutes=SESSION_EXPIRY_MINUTES):
+                # Session expired
+                user_states_collection.delete_one({'sender': sender_id})
+                return None  # Treat as new session
+    return user_state
+
 
 def update_user_state(phone_number, updates):
+    data['last_updated'] = datetime.utcnow()
     updates['phone_number'] = phone_number
     if 'sender' not in updates:
         updates['sender'] = phone_number
