@@ -3,14 +3,11 @@ import logging
 import requests
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from orders import OrderSystem, Product
-
-
-SESSION_EXPIRY_MINUTES = 60
 
 
 logging.basicConfig(level=logging.INFO)
@@ -87,20 +84,9 @@ class User:
 
 # State handlers
 def handle_ask_name(prompt, user_data, phone_id):
-    # Check if we already have the user's name stored
-    if 'user' in user_data and user_data['user'].get('payer_name'):
-        existing_name = user_data['user']['payer_name']
-        # Skip asking for name, go straight to category selection
-        update_user_state(user_data['sender'], {
-            'step': 'choose_category',
-            'user': user_data['user']  # preserve existing user dict
-        })
-        send(f"Welcome back, {existing_name}! Please select a category:\n{list_categories()}", user_data['sender'], phone_id)
-        return {'step': 'choose_category', 'user': user_data['user']}
-    else:
-        send("Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
-        update_user_state(user_data['sender'], {'step': 'save_name'})
-        return {'step': 'save_name'}
+    send("Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
+    update_user_state(user_data['sender'], {'step': 'save_name'})
+    return {'step': 'save_name'}
 
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
@@ -372,7 +358,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
         order_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         payment_info = (
             f"Please make payment using one of the following options:\n\n"
-            f"1. EFT\nBank: FNB\nName: Zimbogrocer (Pty) Ltd\nAccount: 62847698167\nBranch Code: 250655\nSwift Code: FIRNZAJJ\nReference: {order_id}\n\n"
+            f"1. EFT\nBank: FNB\nName: Zimbogrocer (Pty) Ltd\nAccount: 62847698167\nBranch Code: 250655\nSwift Code: FIRNZAJJ\nReference: {order_id}\n"
             f"2. Pay at supermarkets: SHOPRITE, CHECKERS, USAVE, PICK N PAY, GAME, MAKRO or SPAR using Mukuru wicode\n\n"
             f"3. World Remit Transfer (payment details provided upon request)\n\n"
             f"4. Western Union (payment details provided upon request)\n\n"
@@ -446,25 +432,22 @@ def handle_default(prompt, user_data, phone_id):
     return {'step': user_data.get('step', 'ask_name')}
 
 # Utility functions
-
-def get_user_state(sender_id):
-    user_state = user_states_collection.find_one({'sender': sender_id})
-    if user_state:
-        last_updated = user_state.get('last_updated')
-        if last_updated:
-            age = datetime.utcnow() - last_updated
-            if age > timedelta(minutes=SESSION_EXPIRY_MINUTES):
-                # Session expired
-                user_states_collection.delete_one({'sender': sender_id})
-                return None  # Treat as new session
-    return user_state
+def get_user_state(phone_number):
+    state = user_states_collection.find_one({'phone_number': phone_number})
+    if state:
+        state['_id'] = str(state['_id'])  # Convert ObjectId to string
+        return state
+    return {'step': 'ask_name', 'sender': phone_number}
 
 
 def update_user_state(phone_number, updates):
-    data['last_updated'] = datetime.utcnow()
     updates['phone_number'] = phone_number
     if 'sender' not in updates:
         updates['sender'] = phone_number
+
+    # Add expiry time (60 seconds from now)
+    updates['expires_at'] = datetime.utcnow() + timedelta(seconds=60)
+
     user_states_collection.update_one(
         {'phone_number': phone_number},
         {'$set': updates},
