@@ -88,13 +88,26 @@ def handle_ask_name(prompt, user_data, phone_id):
     update_user_state(user_data['sender'], {'step': 'save_name'})
     return {'step': 'save_name'}
 
+def list_all_products():
+    order_system = OrderSystem()
+    categories = order_system.list_categories()
+    all_products = []
+    for cat in categories:
+        all_products.extend(order_system.list_products(cat))
+    # Format nicely, e.g. number + product name
+    output = ""
+    for i, prod in enumerate(all_products, start=1):
+        output += f"{i}. {prod.name} - ${prod.price}\n"
+    return output, all_products
+
+
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
     update_user_state(user_data['sender'], {
         'step': 'choose_product',
         'user': user.to_dict()
     })
-    send(f"Thanks {user.payer_name}! Please select a category:\n{list_categories()}", user_data['sender'], phone_id)
+    send(f"Thanks {user.payer_name}! Please select a category:\n{list_products()}", user_data['sender'], phone_id)
     return {'step': 'choose_product', 'user': user.to_dict()}
 
 def handle_choose_category(prompt, user_data, phone_id):
