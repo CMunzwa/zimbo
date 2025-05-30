@@ -26,19 +26,6 @@ db = client.get_database("zim_grocery")
 user_states_collection = db.user_states
 orders_collection = db.orders
 
-# TTL index set for user state expiry
-def setup_ttl_index():
-    indexes = user_states_collection.index_information()
-    if 'expires_at_ttl' not in indexes:
-        user_states_collection.create_index(
-            'expires_at',
-            expireAfterSeconds=60,
-            name='expires_at_ttl'
-        )
-
-setup_ttl_index()
-
-
 class User:
     def __init__(self, payer_name, payer_phone):
         self.payer_name = payer_name
@@ -97,9 +84,20 @@ class User:
 
 # State handlers
 def handle_ask_name(prompt, user_data, phone_id):
-    send("Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
-    update_user_state(user_data['sender'], {'step': 'save_name'})
-    return {'step': 'save_name'}
+    # Check if we already have the user's name stored
+    if 'user' in user_data and user_data['user'].get('payer_name'):
+        existing_name = user_data['user']['payer_name']
+        # Skip asking for name, go straight to category selection
+        update_user_state(user_data['sender'], {
+            'step': 'choose_category',
+            'user': user_data['user']  # preserve existing user dict
+        })
+        send(f"Welcome back, {existing_name}! Please select a category:\n{list_categories()}", user_data['sender'], phone_id)
+        return {'step': 'choose_category', 'user': user_data['user']}
+    else:
+        send("Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
+        update_user_state(user_data['sender'], {'step': 'save_name'})
+        return {'step': 'save_name'}
 
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
@@ -371,7 +369,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
         order_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         payment_info = (
             f"Please make payment using one of the following options:\n\n"
-            f"1. EFT\nBank: FNB\nName: Zimbogrocer (Pty) Ltd\nAccount: 62847698167\nBranch Code: 250655\nSwift Code: FIRNZAJJ\nReference: {order_id}\n"
+            f"1. EFT\nBank: FNB\nName: Zimbogrocer (Pty) Ltd\nAccount: 62847698167\nBranch Code: 250655\nSwift Code: FIRNZAJJ\nReference: {order_id}\n\n"
             f"2. Pay at supermarkets: SHOPRITE, CHECKERS, USAVE, PICK N PAY, GAME, MAKRO or SPAR using Mukuru wicode\n\n"
             f"3. World Remit Transfer (payment details provided upon request)\n\n"
             f"4. Western Union (payment details provided upon request)\n\n"
@@ -452,15 +450,10 @@ def get_user_state(phone_number):
         return state
     return {'step': 'ask_name', 'sender': phone_number}
 
-
 def update_user_state(phone_number, updates):
     updates['phone_number'] = phone_number
     if 'sender' not in updates:
         updates['sender'] = phone_number
-
-    # Add expiry time (60 seconds from now)
-    updates['expires_at'] = datetime.utcnow() + timedelta(seconds=60)
-
     user_states_collection.update_one(
         {'phone_number': phone_number},
         {'$set': updates},
