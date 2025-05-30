@@ -112,7 +112,7 @@ def handle_choose_category(prompt, user_data, phone_id):
     order_system = OrderSystem()
     if prompt.isalpha() and len(prompt) == 1:
         idx = ord(prompt.upper()) - 65
-        categories = order_system.list_products()
+        products = order_system.list_products()
         if 0 <= idx < len(products):
             cat = products[idx]
             update_user_state(user_data['sender'], {
