@@ -3,11 +3,14 @@ import logging
 import requests
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from orders import OrderSystem, Product
+
+
+SESSION_TIMEOUT_MINUTES = 30
 
 
 logging.basicConfig(level=logging.INFO)
@@ -427,9 +430,37 @@ def handle_default(prompt, user_data, phone_id):
 def get_user_state(phone_number):
     state = user_states_collection.find_one({'phone_number': phone_number})
     if state:
+        last_active = state.get('last_active')
+        if last_active:
+            # last_active is stored as datetime, or ISO string? Let's assume datetime.
+            if isinstance(last_active, str):
+                last_active = datetime.fromisoformat(last_active)
+            
+            if datetime.utcnow() - last_active > timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+                # Session expired — reset the state
+                logging.info(f"Session expired for {phone_number}, resetting state.")
+                reset_state = {'step': 'ask_name', 'sender': phone_number, 'last_active': datetime.utcnow()}
+                user_states_collection.update_one(
+                    {'phone_number': phone_number},
+                    {'$set': reset_state},
+                    upsert=True
+                )
+                return reset_state
+        
+        # Update last_active timestamp on each get
+        user_states_collection.update_one(
+            {'phone_number': phone_number},
+            {'$set': {'last_active': datetime.utcnow()}}
+        )
+        
         state['_id'] = str(state['_id'])  # Convert ObjectId to string
         return state
-    return {'step': 'ask_name', 'sender': phone_number}
+    else:
+        # New user state with last_active set
+        new_state = {'step': 'ask_name', 'sender': phone_number, 'last_active': datetime.utcnow()}
+        user_states_collection.insert_one({**new_state, 'phone_number': phone_number})
+        return new_state
+
 
 def update_user_state(phone_number, updates):
     updates['phone_number'] = phone_number
