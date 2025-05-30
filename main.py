@@ -108,25 +108,6 @@ def handle_save_name(prompt, user_data, phone_id):
     send(f"Thanks {user.payer_name}! Please select a category:\n{list_categories()}", user_data['sender'], phone_id)
     return {'step': 'choose_product', 'user': user.to_dict()}
 
-def handle_choose_category(prompt, user_data, phone_id):
-    order_system = OrderSystem()
-    if prompt.isalpha() and len(prompt) == 1:
-        idx = ord(prompt.upper()) - 65
-        categories = order_system.list_categories()
-        if 0 <= idx < len(categories):
-            cat = categories[idx]
-            update_user_state(user_data['sender'], {
-                'selected_category': cat,
-                'step': 'choose_product'
-            })
-            send(f"Products in {cat}:\n{list_products(cat)}\nSelect a product by number.", user_data['sender'], phone_id)
-            return {'step': 'choose_product', 'selected_category': cat}
-        else:
-            send("Invalid category. Try again:\n" + list_categories(), user_data['sender'], phone_id)
-            return {'step': 'choose_category'}
-    else:
-        send("Please enter a valid category letter (e.g., A, B, C).", user_data['sender'], phone_id)
-        return {'step': 'choose_category'}
 
 def handle_choose_product(prompt, user_data, phone_id):
     try:
