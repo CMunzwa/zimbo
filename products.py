@@ -1,8 +1,4 @@
 
-class Category:
-    def __init__(self, name, products):
-        self.name = name
-        self.products = products
 
 class Product:
     def __init__(self, name, description, price):
