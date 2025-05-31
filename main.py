@@ -588,28 +588,34 @@ def webhook():
             
         return jsonify({"status": "ok"}), 200
 
+
+
 def message_handler(prompt, sender, phone_id):
-    # Normalize the prompt
     normalized_prompt = prompt.strip().lower()
 
     # If user types a greeting, reset chat
     if normalized_prompt in ["hie", "hi", "hello", "restart"]:
         clear_user_state(sender)
-        send("👋Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
-        # Initialize new state
-        update_user_state(sender, {'step': 'save_name', 'user': None})
-        return handle_restart(user_data, phone_id)
+        send("👋Hello! Welcome to Zimbogrocer. What's your name?", sender, phone_id)
+        # Initialize new state with step save_name and no user info yet
+        update_user_state(sender, {'step': 'save_name', 'user': None, 'sender': sender})
+        return handle_restart({'step': 'save_name', 'user': None, 'sender': sender}, phone_id)
 
-    # Get or create user state
+    # Get user state, or initialize if none
     user_state = get_user_state(sender)
-    user_state['sender'] = sender
+    if not user_state:
+        # If no existing state, start fresh
+        user_state = {'step': 'start', 'user': None, 'sender': sender}
 
-    # Process the message
-    updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
+    user_state['sender'] = sender  # Ensure sender is included
 
-    # Update user state in database
+    # Process the message according to the current step
+    updated_state = get_action(user_state.get('step', 'start'), prompt, user_state, phone_id)
+
+    # Save updated state back to DB
     update_user_state(sender, updated_state)
-
+    
+    return updated_state
 
 
 if __name__ == "__main__":
