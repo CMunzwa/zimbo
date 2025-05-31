@@ -90,12 +90,25 @@ def handle_ask_name(prompt, user_data, phone_id):
 
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
+    
+    # Show all products instead of asking for category
+    order_system = OrderSystem()
+    all_products = order_system.all_products()
+    
+    product_list = "\n".join([f"{i+1}. {p.name} - ${p.price:.2f}" for i, p in enumerate(all_products)])
+    message = f"Thanks {user.payer_name}! Here are all available products:\n\n{product_list}\n\nSelect a product by number."
+    
     update_user_state(user_data['sender'], {
-        'step': 'choose_category',
+        'step': 'choose_product',
         'user': user.to_dict()
     })
-    send(f"Thanks {user.payer_name}! Please select a category:\n{list_categories()}", user_data['sender'], phone_id)
-    return {'step': 'choose_category', 'user': user.to_dict()}
+    
+    send(message, user_data['sender'], phone_id)
+    return {
+        'step': 'choose_product',
+        'user': user.to_dict()
+    }
+
 
 def handle_choose_category(prompt, user_data, phone_id):
     order_system = OrderSystem()
@@ -120,9 +133,9 @@ def handle_choose_category(prompt, user_data, phone_id):
 def handle_choose_product(prompt, user_data, phone_id):
     try:
         index = int(prompt) - 1
-        cat = user_data["selected_category"]
         order_system = OrderSystem()
-        products = order_system.list_products(cat)
+        products = order_system.all_products()  # Show all products
+        
         if 0 <= index < len(products):
             selected_product = products[index]
             update_user_state(user_data['sender'], {
@@ -144,10 +157,11 @@ def handle_choose_product(prompt, user_data, phone_id):
             }
         else:
             send("Invalid product number. Try again.", user_data['sender'], phone_id)
-            return {'step': 'choose_product', 'selected_category': cat}
+            return {'step': 'handle_ask_quantity'}
     except Exception:
         send("Please enter a valid product number.", user_data['sender'], phone_id)
-        return {'step': 'choose_product', 'selected_category': user_data["selected_category"]}
+        return {'step': 'handle_ask_quantity'}
+
 
 def handle_ask_quantity(prompt, user_data, phone_id):
     try:
