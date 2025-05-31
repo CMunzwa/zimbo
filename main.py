@@ -82,6 +82,14 @@ class User:
         user.checkout_data = data.get("checkout_data", {})
         return user
 
+def clear_user_state(sender):
+    url = f"{UPSTASH_REDIS_REST_URL}/del/{sender}"
+    headers = {
+        "Authorization": f"Bearer {UPSTASH_REDIS_REST_TOKEN}"
+    }
+    requests.post(url, headers=headers)
+    
+
 # State handlers
 def handle_ask_name(prompt, user_data, phone_id):
     send("Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
