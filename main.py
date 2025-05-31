@@ -501,6 +501,18 @@ def send(answer, sender, phone_id):
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to send message: {e}")
 
+
+def handle_restart(user_data, phone_id):
+    clear_user_state(user_data['sender'])  # remove all Redis state
+
+    send("👋Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
+
+    return {
+        'step': 'save_name',
+        'user': None
+    }
+
+
 # Action mapping
 action_mapping = {
     "ask_name": handle_ask_name,
@@ -573,15 +585,28 @@ def webhook():
         return jsonify({"status": "ok"}), 200
 
 def message_handler(prompt, sender, phone_id):
+    # Normalize the prompt
+    normalized_prompt = prompt.strip().lower()
+
+    # If user types a greeting, reset chat
+    if normalized_prompt in ["hie", "hi", "hello", "restart"]:
+        clear_user_state(sender)
+        send("👋Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
+        # Initialize new state
+        update_user_state(sender, {'step': 'save_name', 'user': None})
+        return handle_restart(user_data, phone_id)
+
     # Get or create user state
     user_state = get_user_state(sender)
     user_state['sender'] = sender
-    
+
     # Process the message
     updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
-    
+
     # Update user state in database
     update_user_state(sender, updated_state)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
