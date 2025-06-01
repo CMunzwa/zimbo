@@ -1,3 +1,14 @@
+class OrderSystem:
+    def __init__(self):
+        self.categories = {}
+        self.all_products = []
+        self.populate_products()
+
+    def add_category(self, category):
+        self.categories[category.name] = category
+        self.all_products.extend(category.products)
+
+
 class Category:
     def __init__(self, name, products=None):
         self.name = name
