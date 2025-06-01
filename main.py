@@ -117,10 +117,10 @@ def handle_choose_category(prompt, user_data, phone_id):
         send("Please enter a valid category letter (e.g., A, B, C).", user_data['sender'], phone_id)
         return {'step': 'choose_category'}
 
-def handle_choose_product(prompt, user_data):
+def handle_choose_product(prompt, user_data, phone_id):
     try:
         if 'order_system' not in user_data or 'selected_category' not in user_data:
-            send("Something went wrong. Let's start over. Please choose a category.", user_data['sender'], user_data['phone_id'])
+            send("Something went wrong. Let's start over. Please choose a category.", user_data['sender'], phone_id)
             user_data['step'] = 'show_categories'
             return
 
@@ -130,16 +130,15 @@ def handle_choose_product(prompt, user_data):
 
         if 0 <= index < len(products):
             user_data["selected_product"] = products[index]
-            send(f"You selected {products[index].name}. How many would you like to add?", user_data['sender'], user_data['phone_id'])
+            send(f"You selected {products[index].name}. How many would you like to add?", user_data['sender'], phone_id)
             user_data["step"] = "ask_quantity"
         else:
             products_list = list_products(user_data['order_system'], cat)
-            send("Invalid product number. Please select a product from the list below:\n" + products_list, user_data['sender'], user_data['phone_id'])
-
+            send("Invalid product number. Please select a product from the list below:\n" + products_list, user_data['sender'], phone_id)
     except Exception:
         cat = user_data.get("selected_category", "")
         products_list = list_products(user_data.get('order_system'), cat) if 'order_system' in user_data else ""
-        send("Please enter a valid product number. Here are the available products again:\n" + products_list, user_data['sender'], user_data['phone_id'])
+        send("Please enter a valid product number. Here are the available products again:\n" + products_list, user_data['sender'], phone_id)
 
 
 
