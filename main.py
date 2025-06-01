@@ -489,8 +489,7 @@ def send(answer, sender, phone_id):
 # Action mapping
 action_mapping = {
     "ask_name": handle_ask_name,
-    "save_name": handle_save_name,
-    "choose_category": handle_choose_category,
+    "save_name": handle_save_name, 
     "choose_product": handle_choose_product,
     "ask_quantity": handle_ask_quantity,
     "post_add_menu": handle_post_add_menu,
