@@ -151,6 +151,10 @@ def handle_choose_product(prompt, user_data, phone_id):
 
 def handle_ask_quantity(prompt, user_data, phone_id):
     try:
+        if "selected_product" not in user_data:
+            send("Please select a product first.", user_data['sender'], phone_id)
+            return {'step': 'choose_product'}
+
         qty = int(prompt)
         if qty < 1:
             raise ValueError
@@ -174,9 +178,16 @@ def handle_ask_quantity(prompt, user_data, phone_id):
             'step': 'post_add_menu',
             'user': user.to_dict()
         }
-    except Exception:
+
+    except ValueError:
         send("Please enter a valid number for quantity (e.g., 1, 2, 3).", user_data['sender'], phone_id)
-        return {'step': 'ask_quantity', 'selected_product': user_data["selected_product"]}
+        return {'step': 'ask_quantity'}
+    except Exception as e:
+        send("Something went wrong. Please start again by selecting a product.", user_data['sender'], phone_id)
+        print(f"ERROR in handle_ask_quantity: {e}")
+        return {'step': 'choose_product'}
+
+
 
 def handle_post_add_menu(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
