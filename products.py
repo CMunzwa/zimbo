@@ -229,11 +229,12 @@ Product("Nan 1: Infant Formula Optipro 400g", "Infant formula", 79.99),
 
 
 def list_all_products():
-    order_system = OrderSystem()
-    products = order_system.get_all_products()
-    
+    order_system = OrderSystem()  
+    products = order_system.all_products  # Assuming all_products is a list in OrderSystem
+
+    # Format product lines for display
     product_lines = []
     for i, product in enumerate(products):
-        product_lines.append(f"{i + 1}. {product.name} - ${product.price}")
-    
-    return "\n".join(product_lines)
+        product_lines.append(f"{i + 1}. {product.name} - R{product.price:.2f}")
+
+    return "\n".join(product_lines) if product_lines else "No products available."
