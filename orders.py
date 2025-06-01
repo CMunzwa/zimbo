@@ -5,14 +5,6 @@ class OrderSystem:
         self.categories = {}
         self.populate_products()
 
-    
-    def list_all_products(self):
-        all_products = []
-        for category in self.categories.values():
-            all_products.extend(category.products)
-        return all_products
-
-
     def populate_products(self):
         # Pantry
         pantry = Category("Pantry")
