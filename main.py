@@ -146,7 +146,9 @@ def handle_choose_product(prompt, user_data, phone_id):
             send("Invalid product number. Try again.", user_data['sender'], phone_id)
             return {'step': 'choose_product', 'selected_category': cat}
     except Exception:
-        send("Please enter a valid product number.", user_data['sender'], phone_id)
+        cat = user_data["selected_category"]
+        products_list = list_products(user_data['order_system'], cat)
+        send("Please enter a valid product number. Here are the available products again:\n" + products_list, user_data['sender'], user_data['phone_id'])
         return {'step': 'choose_product', 'selected_category': user_data["selected_category"]}
 
 def handle_ask_quantity(prompt, user_data, phone_id):
