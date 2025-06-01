@@ -119,34 +119,35 @@ def handle_choose_category(prompt, user_data, phone_id):
 
 def handle_choose_product(prompt, user_data, phone_id):
     try:
-        if 'order_system' not in user_data or 'selected_category' not in user_data:
-            send("Something went wrong. Let's start over. Please choose a category:", user_data['sender'], phone_id)
-            
-            # Show categories immediately
-            categories_list = "\n".join(
-                f"{i+1}. {cat.name}" for i, cat in enumerate(user_data['order_system'].categories)
-            ) if 'order_system' in user_data else "No categories found."
-            send("Available categories:\n" + categories_list, user_data['sender'], phone_id)
-            
-            user_data['step'] = 'show_categories'
-            return
-
         index = int(prompt) - 1
         cat = user_data["selected_category"]
-        products = user_data['order_system'].list_products(cat)
-
+        order_system = OrderSystem()
+        products = order_system.list_products(cat)
         if 0 <= index < len(products):
-            user_data["selected_product"] = products[index]
-            send(f"You selected {products[index].name}. How many would you like to add?", user_data['sender'], phone_id)
-            user_data["step"] = "ask_quantity"
+            selected_product = products[index]
+            update_user_state(user_data['sender'], {
+                'selected_product': {
+                    'name': selected_product.name,
+                    'price': selected_product.price,
+                    'description': selected_product.description
+                },
+                'step': 'ask_quantity'
+            })
+            send(f"You selected {selected_product.name}. How many would you like to add?", user_data['sender'], phone_id)
+            return {
+                'step': 'ask_quantity',
+                'selected_product': {
+                    'name': selected_product.name,
+                    'price': selected_product.price,
+                    'description': selected_product.description
+                }
+            }
         else:
-            products_list = list_products(user_data['order_system'], cat)
-            send("Invalid product number. Please select a product from the list below:\n" + products_list, user_data['sender'], phone_id)
+            send("Invalid product number. Try again.", user_data['sender'], phone_id)
+            return {'step': 'choose_product', 'selected_category': cat}
     except Exception:
-        cat = user_data.get("selected_category", "")
-        products_list = list_products(user_data.get('order_system'), cat) if 'order_system' in user_data else ""
-        send("Please enter a valid product number. Here are the available products again:\n" + products_list, user_data['sender'], phone_id)
-
+        send("Please enter a valid product number.", user_data['sender'], phone_id)
+        return {'step': 'choose_product', 'selected_category': user_data["selected_category"]}
 
 def handle_ask_quantity(prompt, user_data, phone_id):
     try:
@@ -489,7 +490,7 @@ def send(answer, sender, phone_id):
 # Action mapping
 action_mapping = {
     "ask_name": handle_ask_name,
-    "save_name": handle_save_name, 
+    "save_name": handle_save_name,
     "choose_product": handle_choose_product,
     "ask_quantity": handle_ask_quantity,
     "post_add_menu": handle_post_add_menu,
