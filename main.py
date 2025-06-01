@@ -11,7 +11,7 @@ gen_api = os.environ.get("GEN_API")  # Gemini API Key
 owner_phone = os.environ.get("OWNER_PHONE")
 
 
-redis_client = Redis(
+redis_client = redis.Redis(
     url=os.environ["UPSTASH_REDIS_REST_URL"],
     token=os.environ["UPSTASH_REDIS_REST_TOKEN"]
 )
