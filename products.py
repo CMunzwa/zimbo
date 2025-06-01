@@ -1,8 +1,10 @@
 class Category:
-    def __init__(self, id, name, products):
-        self.id = id
+    def __init__(self, name, products=None):
         self.name = name
-        self.products = products  
+        self.products = products or []
+
+    def add_product(self, product):
+        self.products.append(product)
 
 
 class Product:
