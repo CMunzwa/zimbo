@@ -153,7 +153,7 @@ def handle_ask_quantity(prompt, user_data, phone_id):
     try:
         if "selected_product" not in user_data:
             send("Please select a product first.", user_data['sender'], phone_id)
-            return {'step': 'choose_product'}
+            return {'step': 'choose_category'}
 
         qty = int(prompt)
         if qty < 1:
