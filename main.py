@@ -583,7 +583,7 @@ def message_handler(prompt, sender, phone_id):
     update_user_state(sender, updated_state)
 
     if prompt.lower().strip() in ["hie", "hi", "hello", "hey"]:
-    return handle_greeting_reset(user_data['sender'], phone_id)
+        return handle_greeting_reset(user_data['sender'], phone_id)
 
 
 if __name__ == "__main__":
