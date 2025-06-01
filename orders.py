@@ -3,7 +3,12 @@ from products import Category,Product
 class OrderSystem:
     def __init__(self):
         self.categories = {}
+        self.all_products = []
         self.populate_products()
+
+    def add_category(self, category):
+        self.categories[category.name] = category
+        self.all_products.extend(category.products)
 
     def populate_products(self):
         # Pantry
