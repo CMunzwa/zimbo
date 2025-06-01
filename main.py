@@ -83,6 +83,18 @@ class User:
         return user
 
 # State handlers
+def handle_greeting_reset(user_id, phone_id):
+    # Clear user state
+    user_states_collection.delete_one({"_id": user_id})
+
+    # Recreate empty state
+    update_user_state(user_id, {'step': 'ask_name'})
+    
+    # Greet user and prompt for name
+    send("Hi there! Welcome to Zimbogrocer 👋\nWhat’s your name?", user_id, phone_id)
+    return {'step': 'ask_name'}
+
+
 def handle_ask_name(prompt, user_data, phone_id):
     send("Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
     update_user_state(user_data['sender'], {'step': 'save_name'})
@@ -570,6 +582,9 @@ def webhook():
         return jsonify({"status": "ok"}), 200
 
 def message_handler(prompt, sender, phone_id):
+    if prompt.lower().strip() in ["hie", "hi", "hello", "hey"]:
+        return handle_greeting_reset(user_data['sender'], phone_id)
+
     # Get or create user state
     user_state = get_user_state(sender)
     user_state['sender'] = sender
