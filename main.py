@@ -91,23 +91,11 @@ def handle_ask_name(prompt, user_data, phone_id):
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
     update_user_state(user_data['sender'], {
-        'step': 'choose_product_global',
+        'step': 'choose_category',
         'user': user.to_dict()
     })
-
-    # Display all products instead of categories
-    from orders import OrderSystem
-    order_system = OrderSystem()
-    all_products = order_system.list_all_products()
-
-    product_list = "\n".join([f"{i+1}. {p.name} - R{p.price:.2f}" for i, p in enumerate(all_products)])
-    send(f"Thanks {user.payer_name}! Here are our available products:\n{product_list}\n\nSelect a product by number.", user_data['sender'], phone_id)
-
-    return {
-        'step': 'choose_product_global',
-        'user': user.to_dict()
-    }
-
+    send(f"Thanks {user.payer_name}! Please select a category:\n{list_categories()}", user_data['sender'], phone_id)
+    return {'step': 'choose_category', 'user': user.to_dict()}
 
 def handle_choose_category(prompt, user_data, phone_id):
     order_system = OrderSystem()
@@ -169,9 +157,6 @@ def handle_ask_quantity(prompt, user_data, phone_id):
         
         user = User.from_dict(user_data['user'])
         selected_product_data = user_data["selected_product"]
-        if not selected_product:
-            send("Please select a product before proceeding.", sender, phone_id)
-            return
         selected_product = Product(
             selected_product_data['name'],
             selected_product_data['price'],
@@ -248,17 +233,9 @@ def handle_post_add_menu(prompt, user_data, phone_id):
             'user': user.to_dict()
         }
     elif prompt in ["add", "add item", "add another", "add more"]:
-        from orders import OrderSystem
-        order_system = OrderSystem()
-        all_products = order_system.list_all_products()
-        product_list = "\n".join([f"{i+1}. {p.name} - R{p.price:.2f}" for i, p in enumerate(all_products)])
-        update_user_state(user_data['sender'], {
-            'step': 'choose_product_global',
-            'user': user.to_dict()
-        })
-        send("Sure! Here are all our products:\n" + product_list + "\n\nSelect a product by number.", user_data['sender'], phone_id)
-        return {'step': 'choose_product_global', 'user': user.to_dict()}
-
+        update_user_state(user_data['sender'], {'step': 'choose_category'})
+        send("Sure! Here are the available categories:\n" + list_categories(), user_data['sender'], phone_id)
+        return {'step': 'choose_category', 'user': user.to_dict()}
     else:
         send("Sorry, I didn't understand. You can:\n- View Cart\n- Clear Cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
         return {'step': 'post_add_menu', 'user': user.to_dict()}
@@ -492,43 +469,6 @@ def show_cart(user):
 def list_delivery_areas(delivery_areas):
     return "\n".join([f"{k} - R{v:.2f}" for k, v in delivery_areas.items()])
 
-
-def handle_choose_product_global(prompt, user_data, phone_id):
-    try:
-        index = int(prompt) - 1
-        from orders import OrderSystem
-        order_system = OrderSystem()
-        all_products = order_system.list_all_products()
-        if 0 <= index < len(all_products):
-            selected_product = all_products[index]
-            update_user_state(user_data['sender'], {
-                'selected_product': {
-                    'name': selected_product.name,
-                    'price': selected_product.price,
-                    'description': selected_product.description
-                },
-                'step': 'ask_quantity',
-                'user': user_data['user']
-            })
-            send(f"You selected {selected_product.name}. How many would you like to add?", user_data['sender'], phone_id)
-            return {
-                'step': 'ask_quantity',
-                'selected_product': {
-                    'name': selected_product.name,
-                    'price': selected_product.price,
-                    'description': selected_product.description
-                },
-                'user': user_data['user']
-            }
-        else:
-            send("Invalid product number. Try again.", user_data['sender'], phone_id)
-            return {'step': 'choose_product_global', 'user': user_data['user']}
-    except Exception:
-        send("Please enter a valid number.", user_data['sender'], phone_id)
-        return {'step': 'choose_product_global', 'user': user_data['user']}
-
-
-
 def send(answer, sender, phone_id):
     url = f"https://graph.facebook.com/v19.0/{phone_id}/messages"
     headers = {
@@ -563,7 +503,6 @@ action_mapping = {
     "get_phone": handle_get_phone,
     "confirm_details": handle_confirm_details,
     "ask_place_another_order": handle_ask_place_another_order,
-    "choose_product_global": handle_choose_product_global,
 }
 
 def get_action(current_state, prompt, user_data, phone_id):
