@@ -120,7 +120,14 @@ def handle_choose_category(prompt, user_data, phone_id):
 def handle_choose_product(prompt, user_data, phone_id):
     try:
         if 'order_system' not in user_data or 'selected_category' not in user_data:
-            send("Something went wrong. Let's start over. Please choose a category.", user_data['sender'], phone_id)
+            send("Something went wrong. Let's start over. Please choose a category:", user_data['sender'], phone_id)
+            
+            # Show categories immediately
+            categories_list = "\n".join(
+                f"{i+1}. {cat.name}" for i, cat in enumerate(user_data['order_system'].categories)
+            ) if 'order_system' in user_data else "No categories found."
+            send("Available categories:\n" + categories_list, user_data['sender'], phone_id)
+            
             user_data['step'] = 'show_categories'
             return
 
@@ -139,7 +146,6 @@ def handle_choose_product(prompt, user_data, phone_id):
         cat = user_data.get("selected_category", "")
         products_list = list_products(user_data.get('order_system'), cat) if 'order_system' in user_data else ""
         send("Please enter a valid product number. Here are the available products again:\n" + products_list, user_data['sender'], phone_id)
-
 
 
 def handle_ask_quantity(prompt, user_data, phone_id):
