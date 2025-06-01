@@ -7,10 +7,10 @@ class OrderSystem:
 
     
     def list_all_products(self):
-    all_products = []
-    for category in self.categories.values():
-        all_products.extend(category.products)
-    return all_products
+        all_products = []
+        for category in self.categories.values():
+            all_products.extend(category.products)
+        return all_products
 
 
     def populate_products(self):
