@@ -82,10 +82,6 @@ class User:
         user.checkout_data = data.get("checkout_data", {})
         return user
 
-def clear_user_state(sender):
-    user_states_collection.delete_one({"sender": sender})
-    
-
 # State handlers
 def handle_ask_name(prompt, user_data, phone_id):
     send("Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
@@ -94,25 +90,16 @@ def handle_ask_name(prompt, user_data, phone_id):
 
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
-    
-    # Show all products instead of asking for category
-    order_system = OrderSystem()
-    all_products = order_system.all_products()
-    
-    product_list = "\n".join([f"{i+1}. {p.name} - ${p.price:.2f}" for i, p in enumerate(all_products)])
-    message = f"Thanks {user.payer_name}! Here are all available products:\n\n{product_list}\n\nSelect a product by number."
-    
     update_user_state(user_data['sender'], {
-        'step': 'choose_product',
+        'step': 'ask_quantity',  # Directly go to asking for quantity
         'user': user.to_dict()
     })
     
-    send(message, user_data['sender'], phone_id)
-    return {
-        'step': 'choose_product',
-        'user': user.to_dict()
-    }
-
+    # List all products instead of categories
+    order_system = OrderSystem()
+    products = list_products("All")  # Assume you add a method to list all products
+    send(f"Thanks {user.payer_name}! Here are all available products:\n{products}", user_data['sender'], phone_id)
+    return {'step': 'ask_quantity', 'user': user.to_dict()}
 
 def handle_choose_category(prompt, user_data, phone_id):
     order_system = OrderSystem()
@@ -137,9 +124,9 @@ def handle_choose_category(prompt, user_data, phone_id):
 def handle_choose_product(prompt, user_data, phone_id):
     try:
         index = int(prompt) - 1
+        cat = user_data["selected_category"]
         order_system = OrderSystem()
-        products = order_system.all_products()  # Show all products
-        
+        products = order_system.list_products(cat)
         if 0 <= index < len(products):
             selected_product = products[index]
             update_user_state(user_data['sender'], {
@@ -161,11 +148,10 @@ def handle_choose_product(prompt, user_data, phone_id):
             }
         else:
             send("Invalid product number. Try again.", user_data['sender'], phone_id)
-            return {'step': 'handle_ask_quantity'}
+            return {'step': 'choose_product', 'selected_category': cat}
     except Exception:
         send("Please enter a valid product number.", user_data['sender'], phone_id)
-        return {'step': 'handle_ask_quantity'}
-
+        return {'step': 'choose_product', 'selected_category': user_data["selected_category"]}
 
 def handle_ask_quantity(prompt, user_data, phone_id):
     try:
@@ -251,12 +237,26 @@ def handle_post_add_menu(prompt, user_data, phone_id):
             'user': user.to_dict()
         }
     elif prompt in ["add", "add item", "add another", "add more"]:
-        update_user_state(user_data['sender'], {'step': 'choose_category'})
-        send("Sure! Here are the available categories:\n" + list_categories(), user_data['sender'], phone_id)
-        return {'step': 'choose_category', 'user': user.to_dict()}
+        update_user_state(user_data['sender'], {'step': 'ask_quantity'})  # Change to ask quantity directly
+        order_system = OrderSystem()
+        products = list_all_products()  # List all products again
+        send("Sure! Here are all available products:\n" + products, user_data['sender'], phone_id)
+        return {'step': 'ask_quantity', 'user': user.to_dict()}
     else:
         send("Sorry, I didn't understand. You can:\n- View Cart\n- Clear Cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
         return {'step': 'post_add_menu', 'user': user.to_dict()}
+
+
+def list_all_products():
+    order_system = OrderSystem()
+    all_products = []
+    for category in order_system.list_categories():
+        products = order_system.list_products(category)
+        for product in products:
+            all_products.append(f"{product.name} - R{product.price:.2f}")
+    return "\n".join(all_products)
+
+
 
 def handle_get_area(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
@@ -505,18 +505,6 @@ def send(answer, sender, phone_id):
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to send message: {e}")
 
-
-def handle_restart(user_data, phone_id):
-    clear_user_state(user_data['sender'])  # remove all Redis state
-
-    send("👋Hello! Welcome to Zimbogrocer. What's your name?", user_data['sender'], phone_id)
-
-    return {
-        'step': 'save_name',
-        'user': None
-    }
-
-
 # Action mapping
 action_mapping = {
     "ask_name": handle_ask_name,
@@ -588,35 +576,16 @@ def webhook():
             
         return jsonify({"status": "ok"}), 200
 
-
-
 def message_handler(prompt, sender, phone_id):
-    normalized_prompt = prompt.strip().lower()
-
-    # If user types a greeting, reset chat
-    if normalized_prompt in ["hie", "hi", "hello", "restart"]:
-        clear_user_state(sender)
-        send("👋Hello! Welcome to Zimbogrocer. What's your name?", sender, phone_id)
-        # Initialize new state with step save_name and no user info yet
-        update_user_state(sender, {'step': 'save_name', 'user': None, 'sender': sender})
-        return handle_restart({'step': 'save_name', 'user': None, 'sender': sender}, phone_id)
-
-    # Get user state, or initialize if none
+    # Get or create user state
     user_state = get_user_state(sender)
-    if not user_state:
-        # If no existing state, start fresh
-        user_state = {'step': 'start', 'user': None, 'sender': sender}
-
-    user_state['sender'] = sender  # Ensure sender is included
-
-    # Process the message according to the current step
-    updated_state = get_action(user_state.get('step', 'start'), prompt, user_state, phone_id)
-
-    # Save updated state back to DB
-    update_user_state(sender, updated_state)
+    user_state['sender'] = sender
     
-    return updated_state
-
+    # Process the message
+    updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
+    
+    # Update user state in database
+    update_user_state(sender, updated_state)
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
