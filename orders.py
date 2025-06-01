@@ -257,3 +257,12 @@ class OrderSystem:
 
     def list_products(self, category_name):
         return self.categories[category_name].products if category_name in self.categories else []
+
+    def get_all_categories(self):
+        return [category.name for category in self.categories]
+
+    def get_products_by_category(self, category_name):
+        for category in self.categories:
+            if category.name.lower() == category_name.lower():
+                return category.products
+        return []
