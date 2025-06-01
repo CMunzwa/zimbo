@@ -169,6 +169,9 @@ def handle_ask_quantity(prompt, user_data, phone_id):
         
         user = User.from_dict(user_data['user'])
         selected_product_data = user_data["selected_product"]
+        elif not selected_product:
+            send("Please select a product before proceeding.", sender, phone_id)
+            return
         selected_product = Product(
             selected_product_data['name'],
             selected_product_data['price'],
