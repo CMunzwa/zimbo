@@ -120,7 +120,7 @@ def handle_choose_category(prompt, user_data, phone_id):
 def handle_choose_product(prompt, user_data, phone_id):
     try:
         index = int(prompt) - 1
-        cat = user_data["selected_category"]
+        cat = user_data.get("selected_category")
         order_system = OrderSystem()
         products = order_system.list_products(cat)
         if 0 <= index < len(products):
@@ -147,7 +147,7 @@ def handle_choose_product(prompt, user_data, phone_id):
             return {'step': 'choose_product', 'selected_category': cat}
     except Exception:
         send("Please enter a valid product number.", user_data['sender'], phone_id)
-        return {'step': 'choose_product', 'selected_category': user_data["selected_category"]}
+        return {'step': 'choose_product', 'selected_category': user_data.get("selected_category")}
 
 def handle_ask_quantity(prompt, user_data, phone_id):
     try:
