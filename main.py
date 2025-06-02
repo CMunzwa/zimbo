@@ -487,6 +487,32 @@ def send(answer, sender, phone_id):
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to send message: {e}")
 
+def end
+    if msg in ["hi", "hie", "hey"]:
+        reply = "Welcome back to Zimbogrocer!"
+        user_state["step"] = "handle_ask_name"
+        phone_number = message["from"]
+        update_user_state(phone_number, user_state)
+    else:
+        reply = "Thank you for contacting us. Type 'Hi' to start again."
+            
+        update_user_state(sender, user_state)
+        send(reply, sender, phone_id)
+        return jsonify({"status": "ok"}), 200
+
+    # ========== DEFAULT RESPONSE ==========
+    else:
+        reply = "Sorry, I didn't understand that. Type 'Hi' to start over."
+        user_state["step"] = "handle_ask_name"
+        update_user_state(sender, user_state)
+        send(reply, sender, phone_id)
+        return jsonify({"status": "ok"}), 200
+
+    except Exception as e:
+        logger.exception("Unhandled error in webhook")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 # Action mapping
 action_mapping = {
     "ask_name": handle_ask_name,
