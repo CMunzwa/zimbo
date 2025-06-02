@@ -570,15 +570,7 @@ def message_handler(prompt, sender, phone_id):
         updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
         update_user_state(sender, updated_state)
 
-    # Get or create user state
-    user_state = get_user_state(sender)
-    user_state['sender'] = sender
-    
-    # Process the message
-    updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
-    
-    # Update user state in database
-    update_user_state(sender, updated_state)
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
