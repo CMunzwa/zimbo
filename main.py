@@ -255,7 +255,8 @@ def handle_ask_quantity(prompt, user_data, phone_id):
 
         send(
             "Item added to your cart.\nWhat would you like to do next?\n"
-            "- View cart\n- Clear cart\n- Remove <item>\n- Add Item",
+            "1. View cart\n2. Clear cart\n3. Remove <item>\n4. Add Item",
+
             user_data['sender'],
             phone_id
         )
@@ -290,8 +291,8 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         "Dema": 300
     }
     
-    prompt = prompt.lower().strip()
-    if prompt == "view cart":
+   
+    if prompt.lower() in ["view", "view cart", "1"]:   
         cart_message = show_cart(user)
         update_user_state(user_data['sender'], {
             'step': 'get_area',
@@ -303,30 +304,31 @@ def handle_post_add_menu(prompt, user_data, phone_id):
             'delivery_areas': delivery_areas,
             'user': user.to_dict()
         }
-    elif prompt == "clear cart":
+
+    elif prompt.lower() in ["clear", "clear cart", "2"]:    
         user.clear_cart()
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
             'step': 'post_add_menu'
         })
-        send("Cart cleared.\nWhat would you like to do next?\n- View cart\n- Add Item", user_data['sender'], phone_id)
+        send("Cart cleared.\nWhat would you like to do next?\n1 View cart\n4 Add Item", user_data['sender'], phone_id)
         return {
             'step': 'post_add_menu',
             'user': user.to_dict()
         }
-    elif prompt.startswith("remove "):
+    elif prompt.lower() in ["remove", "3"]:     
         item = prompt[7:].strip()
         user.remove_from_cart(item)
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
             'step': 'post_add_menu'
         })
-        send(f"{item} removed from cart.\n{show_cart(user)}\nWhat would you like to do next?\n- View cart\n- Add Item", user_data['sender'], phone_id)
+        send(f"{item} removed from cart.\n{show_cart(user)}\nWhat would you like to do next?\n1 View cart\n4 Add Item", user_data['sender'], phone_id)
         return {
             'step': 'post_add_menu',
             'user': user.to_dict()
         }
-    elif prompt.lower() in ["add", "add item", "add another", "add more"]:
+    elif prompt.lower() in ["add", "add item", "add another", "add more", "4"]:
         # Set step to 'choose_product' (not 'save_name')
         order_system = OrderSystem()
         categories_products = order_system.get_products_by_category()  # dict {category_name: formatted_str}
@@ -400,7 +402,7 @@ def handle_ask_checkout(prompt, user_data, phone_id):
             'user': user.to_dict(),
             'step': 'post_add_menu'
         })
-        send("What would you like to do next?\n- View cart\n- Clear cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
+        send("What would you like to do next?\n1 View cart\n2 Clear cart\n3 Remove <item>\n4 Add Item", user_data['sender'], phone_id)
         return {'step': 'post_add_menu', 'user': user.to_dict()}
     else:
         send("Please respond with 'yes' or 'no'.", user_data['sender'], phone_id)
