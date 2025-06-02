@@ -329,11 +329,11 @@ def handle_post_add_menu(prompt, user_data, phone_id):
     elif prompt in ["add", "add item", "add another", "add more"]:
         update_user_state(user_data['sender'], {'step': 'choose_category'})
         send("Sure! Here are the available products:\n" + list_all_products(), user_data['sender'], phone_id)
-        return {'step': 'choose_product', 'user': user.to_dict()}
+        return {'step': 'save_name', 'user': user.to_dict()}
 
     else:
         send("Sorry, I didn't understand. You can:\n- View Cart\n- Clear Cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
-        return {'step': 'post_add_menu', 'user': user.to_dict()}
+        return {'step': 'save_name', 'user': user.to_dict()}
 
 def handle_get_area(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
