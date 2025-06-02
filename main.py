@@ -654,6 +654,7 @@ action_mapping = {
     "get_id": handle_get_id,
     "get_phone": handle_get_phone,
     "confirm_details": handle_confirm_details,
+    "await_payment_selection": handle_payment_selection,
     "ask_place_another_order": handle_ask_place_another_order,
 }
 
