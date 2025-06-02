@@ -588,7 +588,7 @@ def handle_get_phone(prompt, user_data, phone_id):
     confirm_message = (
         f"Please confirm the details below:\n\n"
         f"Name: {details['receiver_name']}\n"
-        f"Address: {details['address']}\n"
+        f"Address: {user.checkout_data.get('address', 'N/A')}\n"
         f"ID: {details['id_number']}\n"
         f"Phone: {details['phone']}\n\n"
         "Are these correct? (yes/no)"
