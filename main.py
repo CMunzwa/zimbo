@@ -616,7 +616,7 @@ def handle_payment_selection(selection, user_data, phone_id):
         "2": "Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode",
         "3": "World Remit Transfer (details provided upon request)",
         "4": "Western Union (details provided upon request)",
-        "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
+        "5": "Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
     }
 
     payment_text = payment_methods.get(selection)
