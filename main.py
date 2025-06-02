@@ -664,7 +664,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"New Order #{order_id}\n"
             f"From: {user.payer_name} ({user.payer_phone})\n"
             f"Receiver: {user.checkout_data['receiver_name']}\n"
-            f"Address: {user.checkout_data['address']}\n"
+            f"Address: {user.checkout_data.get('address', 'N/A')}\n"
             f"Phone: {user.checkout_data['phone']}\n"
             f"Items:\n{show_cart(user)}"
         )
@@ -675,7 +675,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"Order placed! 🛒\nOrder ID: {order_id}\n\n"
             f"{show_cart(user)}\n\n"
             f"Receiver: {user.checkout_data['receiver_name']}\n"
-            f"Address: {user.checkout_data['address']}\n"
+            f"Address: {user.checkout_data.get('address', 'N/A')}\n"
             f"Phone: {user.checkout_data['phone']}\n\n"
             f"Payment Method: {payment_text}\n\n"
             f"Would you like to place another order? (yes/no)",
