@@ -90,12 +90,61 @@ def handle_ask_name(prompt, user_data, phone_id):
 
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
+    
+    # Get categories with products (list of tuples or dict items)
+    categories_products = get_products_by_category()  # e.g. dict
+    
+    category_names = list(categories_products.keys())
+    product_lists = list(categories_products.values())
+    
+    # Start with the first category
+    current_index = 0
+    first_category = category_names[current_index]
+    first_products = product_lists[current_index]
+    
+    # Save user state with category index and product data
     update_user_state(user_data['sender'], {
         'step': 'choose_product',
-        'user': user.to_dict()
+        'user': user.to_dict(),
+        'category_names': category_names,
+        'current_category_index': current_index
     })
-    send(f"Thanks {user.payer_name}! Please select a product:\n{list_all_products()}", user_data['sender'], phone_id)
+    
+    message = f"Thanks {user.payer_name}! Here are products from {first_category}:\n{first_products}\n\nReply 'more' to see next category."
+    send(message, user_data['sender'], phone_id)
+    
     return {'step': 'choose_product', 'user': user.to_dict()}
+
+def handle_next_category(user_data, phone_id):
+    state = get_user_state(user_data['sender'])
+    category_names = state.get('category_names', [])
+    current_index = state.get('current_category_index', 0)
+    
+    # Move to next category
+    current_index += 1
+    
+    if current_index >= len(category_names):
+        send("No more categories. You can now select a product or type 'menu' to go back.", user_data['sender'], phone_id)
+        return {'step': 'choose_product', 'user': state.get('user')}
+    
+    # Fetch products for next category
+    categories_products = get_products_by_category()
+    next_category = category_names[current_index]
+    next_products = categories_products[next_category]
+    
+    # Update user state
+    update_user_state(user_data['sender'], {
+        'step': 'choose_product',
+        'user': state.get('user'),
+        'category_names': category_names,
+        'current_category_index': current_index
+    })
+    
+    message = f"Here are products from {next_category}:\n{next_products}\n\nReply 'more' to see next category."
+    send(message, user_data['sender'], phone_id)
+    
+    return {'step': 'choose_product', 'user': state.get('user')}
+
 
 def handle_choose_category(prompt, user_data, phone_id):
     order_system = OrderSystem()
