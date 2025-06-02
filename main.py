@@ -326,14 +326,35 @@ def handle_post_add_menu(prompt, user_data, phone_id):
             'step': 'post_add_menu',
             'user': user.to_dict()
         }
-    elif prompt in ["add", "add item", "add another", "add more"]:
-        update_user_state(user_data['sender'], {'step': 'choose_category'})
-        send("Sure! Here are the available products:\n" + list_all_products(), user_data['sender'], phone_id)
-        return {'step': 'save_name', 'user': user.to_dict()}
-
-    else:
-        send("Sorry, I didn't understand. You can:\n- View Cart\n- Clear Cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
-        return {'step': 'save_name', 'user': user.to_dict()}
+    elif prompt.lower() in ["add", "add item", "add another", "add more"]:
+        # Set step to 'choose_product' (not 'save_name')
+        order_system = OrderSystem()
+        categories_products = order_system.get_products_by_category()  # dict {category_name: formatted_str}
+    
+        # Save state for category navigation
+        category_names = list(categories_products.keys())
+        current_index = 0
+        first_category = category_names[current_index]
+        first_products = categories_products[first_category]
+    
+        update_user_state(user_data['sender'], {
+            'step': 'choose_product',
+            'user': user.to_dict(),
+            'category_names': category_names,
+            'current_category_index': current_index
+        })
+    
+        send(
+            f"Sure! Here are products from {first_category}:\n"
+            f"{first_products}\n\nReply 'more' to see next category.",
+            user_data['sender'],
+            phone_id
+        )
+    
+        return {
+            'step': 'choose_product',
+            'user': user.to_dict()
+        }
 
 def handle_get_area(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
