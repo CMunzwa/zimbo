@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from orders import OrderSystem 
-from orders import get_products_by_category,
+from orders import get_products_by_category
 
 
 logging.basicConfig(level=logging.INFO)
