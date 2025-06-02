@@ -168,9 +168,8 @@ class OrderSystem:
             all_products.extend(cat.products)
         return all_products
 
-    def get_products_by_category():
-        # Suppose you have a list of categories
-        categories = [pantry]  # add more categories here as you build them
+    def get_products_by_category(self):        
+        categories = [pantry]  
     
         products_by_cat = {}
         for category in categories:
