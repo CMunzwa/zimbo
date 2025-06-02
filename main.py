@@ -8,7 +8,6 @@ from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from orders import OrderSystem 
-from orders import get_products_by_category
 
 
 logging.basicConfig(level=logging.INFO)
@@ -92,8 +91,11 @@ def handle_ask_name(prompt, user_data, phone_id):
 def handle_save_name(prompt, user_data, phone_id):
     user = User(prompt.title(), user_data['sender'])
     
-    # Get categories with products (list of tuples or dict items)
-    categories_products = get_products_by_category()  # e.g. dict
+    # Create an instance of OrderSystem
+    order_system = OrderSystem()
+    
+    # Call the method on the instance
+    categories_products = order_system.get_products_by_category()  # e.g. dict
     
     category_names = list(categories_products.keys())
     product_lists = list(categories_products.values())
@@ -115,6 +117,7 @@ def handle_save_name(prompt, user_data, phone_id):
     send(message, user_data['sender'], phone_id)
     
     return {'step': 'choose_product', 'user': user.to_dict()}
+    
 
 def handle_next_category(user_data, phone_id):
     state = get_user_state(user_data['sender'])
