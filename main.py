@@ -362,24 +362,37 @@ def handle_get_area(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     delivery_areas = user_data['delivery_areas']
     area = prompt.strip().title()
-    
-    if area in delivery_areas:
+
+    if area.lower() == "harare":
+        send("Would you like to *pick up* or *have it delivered*?", user_data['sender'], phone_id)
+        update_user_state(user_data['sender'], {
+            'user': user.to_dict(),
+            'step': 'choose_delivery_or_pickup',
+            'area': area
+        })
+        return {
+            'step': 'choose_delivery_or_pickup',
+            'user': user.to_dict()
+        }
+
+    elif area in delivery_areas:
         user.checkout_data["delivery_area"] = area
         fee = delivery_areas[area]
         user.checkout_data["delivery_fee"] = fee
         delivery_product = Product(f"Delivery to {area}", fee, "Delivery fee")
         user.add_to_cart(delivery_product, 1)
-        
+
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
             'step': 'ask_checkout'
         })
-        
+
         send(f"{show_cart(user)}\nWould you like to checkout? (yes/no)", user_data['sender'], phone_id)
         return {
             'step': 'ask_checkout',
             'user': user.to_dict()
         }
+
     else:
         send(f"Invalid area. Please choose from:\n{list_delivery_areas(delivery_areas)}", user_data['sender'], phone_id)
         return {
@@ -387,6 +400,78 @@ def handle_get_area(prompt, user_data, phone_id):
             'delivery_areas': delivery_areas,
             'user': user.to_dict()
         }
+
+def handle_choose_delivery_or_pickup(choice, user_data, phone_id):
+    user = User.from_dict(user_data['user'])
+    choice = choice.strip().lower()
+
+    if choice in ['pickup', 'pick up']:
+        update_user_state(user_data['sender'], {
+            'user': user.to_dict(),
+            'step': 'get_receiver_name_pickup',
+            'delivery_type': 'pickup',
+            'area': 'Harare'
+        })
+        send("What's the full name of the receiver?", user_data['sender'], phone_id)
+        return {
+            'step': 'get_receiver_name_pickup',
+            'user': user.to_dict()
+        }
+
+    elif choice in ['delivery', 'deliver']:
+        user.checkout_data['area'] = 'Harare'
+        update_user_state(user_data['sender'], {
+            'user': user.to_dict(),
+            'step': 'get_receiver_name',
+            'delivery_type': 'delivery',
+            'area': 'Harare'
+        })
+        send("What's the full name of the receiver?", user_data['sender'], phone_id)
+        return {
+            'step': 'get_receiver_name',
+            'user': user.to_dict()
+        }
+
+    send("Please reply with *pickup* or *delivery*.", user_data['sender'], phone_id)
+    return {
+        'step': 'choose_delivery_or_pickup',
+        'user': user.to_dict()
+    }
+
+
+def handle_get_receiver_name_pickup(name, user_data, phone_id):
+    user = User.from_dict(user_data['user'])
+    user.checkout_data['receiver_name'] = name
+
+    update_user_state(user_data['sender'], {
+        'user': user.to_dict(),
+        'step': 'get_id_pickup'
+    })
+    send("What's the ID number of the receiver?", user_data['sender'], phone_id)
+    return {
+        'step': 'get_id_pickup',
+        'user': user.to_dict()
+    }
+
+
+def handle_get_id_pickup(id_number, user_data, phone_id):
+    user = User.from_dict(user_data['user'])
+    user.checkout_data['id_number'] = id_number
+
+    pickup_address = "Pickup Location: 123 Mbare Street, Harare. Open Mon–Sat, 8am–5pm."
+    send(f"Thank you! Please collect your order at:\n\n{pickup_address}", user_data['sender'], phone_id)
+
+    user.clear_cart()
+    update_user_state(user_data['sender'], {
+        'user': user.to_dict(),
+        'step': 'ask_place_another_order'
+    })
+
+    return {
+        'step': 'ask_place_another_order',
+        'user': user.to_dict()
+    }
+
 
 def handle_ask_checkout(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
@@ -656,6 +741,9 @@ action_mapping = {
     "confirm_details": handle_confirm_details,
     "await_payment_selection": handle_payment_selection,
     "ask_place_another_order": handle_ask_place_another_order,
+    "choose_delivery_or_pickup": handle_choose_delivery_or_pickup,
+    "get_receiver_name_pickup": handle_get_receiver_name_pickup,
+    "get_id_pickup": handle_get_id_pickup,
 }
 
 def get_action(current_state, prompt, user_data, phone_id):
