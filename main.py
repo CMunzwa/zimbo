@@ -571,7 +571,7 @@ def handle_get_address(prompt, user_data, phone_id):
 
 def handle_get_id(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
-    user.checkout_data["id_number"] = prompt
+    user.checkout_data["receiver_id"] = prompt
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
         'step': 'get_phone'
@@ -590,7 +590,7 @@ def handle_get_phone(prompt, user_data, phone_id):
         f"Please confirm the details below:\n\n"
         f"Name: {details['receiver_name']}\n"
         f"Address: {user.checkout_data.get('address', 'N/A')}\n"
-        f"ID: {details['id_number']}\n"
+        f"ID: {details['receiver_id']}\n"
         f"Phone: {details['phone']}\n\n"
         "Are these correct? (yes/no)"
     )
@@ -665,7 +665,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"New Order #{order_id}\n"
             f"From: {user.payer_name} ({user.payer_phone})\n"
             f"Receiver: {user.checkout_data['receiver_name']}\n"
-            f"ID: {user.checkout_data['id_number']}\n"
+            f"ID: {user.checkout_data['receiver_id']}\n"
             f"Address: {user.checkout_data.get('address', 'N/A')}\n"
             f"Phone: {user.checkout_data.get('phone', 'N/A')}\n"
             f"Items:\n{show_cart(user)}"
@@ -677,7 +677,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"Order placed! 🛒\nOrder ID: {order_id}\n\n"
             f"{show_cart(user)}\n\n"
             f"Receiver: {user.checkout_data['receiver_name']}\n"
-            f"ID: {user.checkout_data['id_number']}\n"
+            f"ID: {user.checkout_data['receiver_id']}\n"
             f"Address: {user.checkout_data.get('address', 'N/A')}\n"
             f"Phone: {user.checkout_data.get('phone', 'N/A')}\n\n"
             f"Payment Method: {payment_text}\n\n"
