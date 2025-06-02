@@ -469,9 +469,10 @@ def handle_get_id_pickup(prompt, user_data, phone_id):
     payment_prompt = (
         "Please select a payment method:\n"
         "1. EFT\n"
-        "2. Pay at supermarket (Mukuru wicode)\n"
+        "2. Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
         "3. World Remit\n"
         "4. Western Union"
+        "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
     )
     send(payment_prompt, user_data['sender'], phone_id)
 
@@ -665,7 +666,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"From: {user.payer_name} ({user.payer_phone})\n"
             f"Receiver: {user.checkout_data['receiver_name']}\n"
             f"Address: {user.checkout_data.get('address', 'N/A')}\n"
-            f"Phone: {user.checkout_data['phone']}\n"
+            f"Phone: {user.checkout_data.get('phone', 'N/A')}\n"
             f"Items:\n{show_cart(user)}"
         )
         send(owner_message, owner_phone, phone_id)
@@ -676,7 +677,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"{show_cart(user)}\n\n"
             f"Receiver: {user.checkout_data['receiver_name']}\n"
             f"Address: {user.checkout_data.get('address', 'N/A')}\n"
-            f"Phone: {user.checkout_data['phone']}\n\n"
+            f"Phone: {user.checkout_data.get('phone', 'N/A')}\n\n"
             f"Payment Method: {payment_text}\n\n"
             f"Would you like to place another order? (yes/no)",
             user_data['sender'], phone_id
