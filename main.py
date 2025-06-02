@@ -213,34 +213,61 @@ def handle_choose_product(prompt, user_data, phone_id):
         return {'step': 'choose_product'}
 
 
+
 def handle_ask_quantity(prompt, user_data, phone_id):
+    # Step 1: Try converting prompt to an integer
     try:
-        qty = int(prompt)
+        print(f"[DEBUG] Raw user input: {prompt!r}")
+        qty = int(prompt.strip())
         if qty < 1:
-            raise ValueError
-        
-        user = User.from_dict(user_data['user'])
-        selected_product_data = user_data["selected_product"]
+            raise ValueError("Quantity must be 1 or more.")
+    except ValueError as ve:
+        print(f"[ERROR] Invalid quantity input: {ve}")
+        send("Please enter a valid number for quantity (e.g., 1, 2, 3).", user_data['sender'], phone_id)
+        return {'step': 'ask_quantity', 'selected_product': user_data.get("selected_product", {})}
+
+    # Step 2: Proceed with adding to cart
+    try:
+        user_dict = user_data.get('user')
+        if not user_dict:
+            raise KeyError("User data is missing.")
+
+        selected_product_data = user_data.get("selected_product")
+        if not selected_product_data:
+            raise KeyError("Selected product data is missing.")
+
+        user = User.from_dict(user_dict)
         selected_product = Product(
             selected_product_data['name'],
             selected_product_data['price'],
             selected_product_data.get('description', '')
         )
+
         user.add_to_cart(selected_product, qty)
-        
+
+        # Update state to post_add_menu
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
             'step': 'post_add_menu'
         })
-        
-        send("Item added to your cart.\nWhat would you like to do next?\n- View cart\n- Clear cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
+
+        send(
+            "Item added to your cart.\nWhat would you like to do next?\n"
+            "- View cart\n- Clear cart\n- Remove <item>\n- Add Item",
+            user_data['sender'],
+            phone_id
+        )
+
         return {
             'step': 'post_add_menu',
             'user': user.to_dict()
         }
-    except Exception:
-        send("Please enter a valid number for quantity (e.g., 1, 2, 3).", user_data['sender'], phone_id)
-        return {'step': 'ask_quantity', 'selected_product': user_data["selected_product"]}
+
+    except Exception as e:
+        print(f"[ERROR] Exception during cart update: {e}")
+        send("Something went wrong while adding the item. Please try again.", user_data['sender'], phone_id)
+        return {'step': 'ask_quantity', 'selected_product': user_data.get("selected_product", {})}
+
 
 def handle_post_add_menu(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
