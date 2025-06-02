@@ -559,6 +559,17 @@ def webhook():
         return jsonify({"status": "ok"}), 200
 
 def message_handler(prompt, sender, phone_id):
+        if prompt.strip().lower() in ["hi", "hey", "hie"]:
+            user_state = {'step': 'ask_name', 'sender': sender}
+            updated_state = get_action('ask_name', prompt, user_state, phone_id)
+            update_user_state(sender, updated_state)
+            return
+
+        user_state = get_user_state(sender)
+        user_state['sender'] = sender
+        updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
+        update_user_state(sender, updated_state)
+
     # Get or create user state
     user_state = get_user_state(sender)
     user_state['sender'] = sender
