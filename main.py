@@ -459,13 +459,13 @@ def handle_get_id_pickup(prompt, id_number, user_data, phone_id):
     user.checkout_data['receiver_id'] = prompt.strip()
 
     if user.checkout_data.get("delivery_method") == "pickup":
-        send("Pickup Address:\n123 Nelson Mandela Ave, Harare\nMon–Fri, 9am–5pm", user_data['sender'], phone_id)
+        send("Pickup Address:\n42A Mbuya Nehanda St, Harare\nMon–Fri, 9am–5pm", user_data['sender'], phone_id)
 
         # Proceed to payment options
         payment_prompt = (
             "Please select a payment method:\n"
             "1. EFT\n"
-            "2. Pay at  SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
+            "2. Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
             "3. World Remit\n"
             "4. Western Union"
             "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
@@ -583,7 +583,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
         payment_prompt = (
             "Please select a payment method:\n"
             "1. EFT\n"
-            "2. Pay at supermarket (Mukuru wicode)\n"
+            "2. Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
             "3. World Remit\n"
             "4. Western Union"
             "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
@@ -613,7 +613,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             "Account: 62847698167\nBranch Code: 250655\n"
             "Swift Code: FIRNZAJJ\nReference: " + order_id
         ),
-        "2": "Pay at supermarkets using Mukuru wicode",
+        "2": "Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode",
         "3": "World Remit Transfer (details provided upon request)",
         "4": "Western Union (details provided upon request)",
         "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
