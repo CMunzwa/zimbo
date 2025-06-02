@@ -512,7 +512,7 @@ def handle_payment_selection(selection, user_data, phone_id):
     }
 
     payment_text = payment_methods.get(selection)
-    if not payment_text:
+    if payment_text:
         # Save order to DB
         order_data = {
             'order_id': order_id,
