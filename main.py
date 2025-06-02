@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from orders import OrderSystem 
 import traceback
+from products import Category,Product
 
 
 logging.basicConfig(level=logging.INFO)
