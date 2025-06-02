@@ -438,7 +438,6 @@ def handle_choose_delivery_or_pickup(prompt, user_data, phone_id):
         'user': user.to_dict()
     }
 
-
 def handle_get_receiver_name_pickup(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     user.checkout_data['receiver_name'] = prompt.strip()
