@@ -495,7 +495,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
         }
 
 
-    def handle_payment_selection(selection, user_data, phone_id):
+def handle_payment_selection(selection, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     order_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
@@ -552,11 +552,13 @@ def handle_confirm_details(prompt, user_data, phone_id):
         user_data['sender'], phone_id
     )
 
+    # Clear cart and update state
     user.clear_cart()
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
         'step': 'ask_place_another_order'
     })
+
 
     return {
         'step': 'ask_place_another_order',
