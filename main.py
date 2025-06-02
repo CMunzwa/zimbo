@@ -401,9 +401,9 @@ def handle_get_area(prompt, user_data, phone_id):
             'user': user.to_dict()
         }
 
-def handle_choose_delivery_or_pickup(prompt, choice, user_data, phone_id):
+def handle_choose_delivery_or_pickup(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
-    choice = choice.strip().lower()
+    choice = prompt.strip().lower()
 
     if choice in ['pickup', 'pick up']:
         update_user_state(user_data['sender'], {
