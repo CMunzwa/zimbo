@@ -629,16 +629,29 @@ def list_all_products():
 
 
 def message_handler(prompt, sender, phone_id):
-        if prompt.strip().lower() in ["hi", "hey", "hie"]:
-            user_state = {'step': 'ask_name', 'sender': sender}
-            updated_state = get_action('ask_name', prompt, user_state, phone_id)
-            update_user_state(sender, updated_state)
-            return
+    text = prompt.strip().lower()
 
-        user_state = get_user_state(sender)
-        user_state['sender'] = sender
-        updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
+    # Greeting triggers ask_name flow
+    if text in ["hi", "hey", "hie"]:
+        user_state = {'step': 'ask_name', 'sender': sender}
+        updated_state = get_action('ask_name', prompt, user_state, phone_id)
         update_user_state(sender, updated_state)
+        return
+
+    # Load existing user state
+    user_state = get_user_state(sender)
+    user_state['sender'] = sender
+
+    # Handle 'more' to show next category
+    if text == "more" and user_state.get('step') == 'choose_product':
+        updated_state = handle_next_category(user_state, phone_id)
+        update_user_state(sender, updated_state)
+        return
+
+    # Default step handler
+    updated_state = get_action(user_state['step'], prompt, user_state, phone_id)
+    update_user_state(sender, updated_state)
+
 
 
 
