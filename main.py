@@ -235,8 +235,9 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         }
     elif prompt in ["add", "add item", "add another", "add more"]:
         update_user_state(user_data['sender'], {'step': 'choose_category'})
-        send("Sure! Here are the available categories:\n" + list_categories(), user_data['sender'], phone_id)
-        return {'step': 'choose_category', 'user': user.to_dict()}
+        send("Sure! Here are the available products:\n" + list_all_products(), user_data['sender'], phone_id)
+        return {'step': 'choose_product', 'user': user.to_dict()}
+
     else:
         send("Sorry, I didn't understand. You can:\n- View Cart\n- Clear Cart\n- Remove <item>\n- Add Item", user_data['sender'], phone_id)
         return {'step': 'post_add_menu', 'user': user.to_dict()}
@@ -492,7 +493,6 @@ def send(answer, sender, phone_id):
 action_mapping = {
     "ask_name": handle_ask_name,
     "save_name": handle_save_name,
-    "choose_category": handle_choose_category,
     "choose_product": handle_choose_product,
     "ask_quantity": handle_ask_quantity,
     "post_add_menu": handle_post_add_menu,
