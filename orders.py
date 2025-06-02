@@ -168,16 +168,14 @@ class OrderSystem:
             all_products.extend(cat.products)
         return all_products
 
-    def get_products_by_category(self):        
-        categories = [pantry]  
-    
+    def get_products_by_category(self):
         products_by_cat = {}
-        for category in categories:
-            # Build product list string for this category
+        for category in self.categories.values():
             product_lines = []
             for product in category.products:
                 line = f"{product.name} - ${product.price:.2f}"
                 product_lines.append(line)
             products_by_cat[category.name] = "\n".join(product_lines)
         return products_by_cat
+
 
