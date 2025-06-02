@@ -487,7 +487,7 @@ def send(answer, sender, phone_id):
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to send message: {e}")
 
-def end
+def end():
     if msg in ["hi", "hie", "hey"]:
         reply = "Welcome back to Zimbogrocer!"
         user_state["step"] = "handle_ask_name"
