@@ -401,7 +401,7 @@ def handle_get_area(prompt, user_data, phone_id):
             'user': user.to_dict()
         }
 
-def handle_choose_delivery_or_pickup(choice, user_data, phone_id):
+def handle_choose_delivery_or_pickup(prompt, choice, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     choice = choice.strip().lower()
 
@@ -439,7 +439,7 @@ def handle_choose_delivery_or_pickup(choice, user_data, phone_id):
     }
 
 
-def handle_get_receiver_name_pickup(name, user_data, phone_id):
+def handle_get_receiver_name_pickup(prompt, name, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     user.checkout_data['receiver_name'] = prompt.strip()
 
@@ -454,7 +454,7 @@ def handle_get_receiver_name_pickup(name, user_data, phone_id):
     }
 
 
-def handle_get_id_pickup(id_number, user_data, phone_id):
+def handle_get_id_pickup(prompt, id_number, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     user.checkout_data['receiver_id'] = prompt.strip()
 
@@ -465,9 +465,10 @@ def handle_get_id_pickup(id_number, user_data, phone_id):
         payment_prompt = (
             "Please select a payment method:\n"
             "1. EFT\n"
-            "2. Pay at supermarket (Mukuru wicode)\n"
+            "2. Pay at  SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
             "3. World Remit\n"
             "4. Western Union"
+            "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
         )
         send(payment_prompt, user_data['sender'], phone_id)
 
@@ -585,6 +586,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
             "2. Pay at supermarket (Mukuru wicode)\n"
             "3. World Remit\n"
             "4. Western Union"
+            "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
         )
         send(payment_prompt, user_data['sender'], phone_id)
 
@@ -613,7 +615,8 @@ def handle_payment_selection(selection, user_data, phone_id):
         ),
         "2": "Pay at supermarkets using Mukuru wicode",
         "3": "World Remit Transfer (details provided upon request)",
-        "4": "Western Union (details provided upon request)"
+        "4": "Western Union (details provided upon request)",
+        "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
     }
 
     payment_text = payment_methods.get(selection)
@@ -664,7 +667,7 @@ def handle_payment_selection(selection, user_data, phone_id):
         }
     
     else:
-        send("Invalid selection. Please enter a number between 1 and 4.", user_data['sender'], phone_id)
+        send("Invalid selection. Please enter a number between 1 and 5.", user_data['sender'], phone_id)
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
             'step': 'await_payment_selection'
