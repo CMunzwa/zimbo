@@ -513,69 +513,62 @@ def handle_payment_selection(selection, user_data, phone_id):
 
     payment_text = payment_methods.get(selection)
     if not payment_text:
+        # Save order to DB
+        order_data = {
+            'order_id': order_id,
+            'user_data': user.to_dict(),
+            'timestamp': datetime.now(),
+            'status': 'pending',
+            'total_amount': user.get_cart_total()
+        }
+        orders_collection.insert_one(order_data)
+    
+        # Notify owner
+        owner_message = (
+            f"New Order #{order_id}\n"
+            f"From: {user.payer_name} ({user.payer_phone})\n"
+            f"Receiver: {user.checkout_data['receiver_name']}\n"
+            f"Address: {user.checkout_data['address']}\n"
+            f"Phone: {user.checkout_data['phone']}\n"
+            f"Items:\n{show_cart(user)}"
+        )
+        send(owner_message, owner_phone, phone_id)
+    
+        # Send confirmation to user
+        send(
+            f"Order placed! 🛒\nOrder ID: {order_id}\n\n"
+            f"{show_cart(user)}\n\n"
+            f"Receiver: {user.checkout_data['receiver_name']}\n"
+            f"Address: {user.checkout_data['address']}\n"
+            f"Phone: {user.checkout_data['phone']}\n\n"
+            f"Payment Method: {payment_text}\n\n"
+            f"Would you like to place another order? (yes/no)",
+            user_data['sender'], phone_id
+        )
+    
+        # Clear cart and update state
+        user.clear_cart()
+        update_user_state(user_data['sender'], {
+            'user': user.to_dict(),
+            'step': 'ask_place_another_order'
+        })
+    
+        return {
+            'step': 'ask_place_another_order',
+            'user': user.to_dict()
+        }
+    
+    else:
         send("Invalid selection. Please enter a number between 1 and 4.", user_data['sender'], phone_id)
+        update_user_state(user_data['sender'], {
+            'user': user.to_dict(),
+            'step': 'await_payment_selection'
+        })
         return {
             'step': 'await_payment_selection',
             'user': user.to_dict()
         }
 
-    # Save order to DB
-    order_data = {
-        'order_id': order_id,
-        'user_data': user.to_dict(),
-        'timestamp': datetime.now(),
-        'status': 'pending',
-        'total_amount': user.get_cart_total()
-    }
-    orders_collection.insert_one(order_data)
-
-    # Notify owner
-    owner_message = (
-        f"New Order #{order_id}\n"
-        f"From: {user.payer_name} ({user.payer_phone})\n"
-        f"Receiver: {user.checkout_data['receiver_name']}\n"
-        f"Address: {user.checkout_data['address']}\n"
-        f"Phone: {user.checkout_data['phone']}\n"
-        f"Items:\n{show_cart(user)}"
-    )
-    send(owner_message, owner_phone, phone_id)
-
-    # Send confirmation to user
-    send(
-        f"Order placed! 🛒\nOrder ID: {order_id}\n\n"
-        f"{show_cart(user)}\n\n"
-        f"Receiver: {user.checkout_data['receiver_name']}\n"
-        f"Address: {user.checkout_data['address']}\n"
-        f"Phone: {user.checkout_data['phone']}\n\n"
-        f"Payment Method: {payment_text}\n\n"
-        f"Would you like to place another order? (yes/no)",
-        user_data['sender'], phone_id
-    )
-
-    # Clear cart and update state
-    user.clear_cart()
-    update_user_state(user_data['sender'], {
-        'user': user.to_dict(),
-        'step': 'ask_place_another_order'
-    })
-
-
-    return {
-        'step': 'ask_place_another_order',
-        'user': user.to_dict()
-    }
-
-    
-    else:
-        update_user_state(user_data['sender'], {
-            'user': user.to_dict(),
-            'step': 'get_receiver_name'
-        })
-        send("Okay, let's correct the details. What's the receiver's full name?", user_data['sender'], phone_id)
-        return {
-            'step': 'get_receiver_name',
-            'user': user.to_dict()
-        }
 
 def handle_ask_place_another_order(prompt, user_data, phone_id):
     if prompt.lower() in ["yes", "y"]:
