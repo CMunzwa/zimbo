@@ -393,7 +393,7 @@ def handle_ask_checkout(prompt, user_data, phone_id):
     
     if prompt.lower() in ["yes", "y"]:
         update_user_state(user_data['sender'], {'step': 'get_receiver_name'})
-        send("Please enter the receiver's full name.", user_data['sender'], phone_id)
+        send("Please enter the receiver's full name as on national ID.", user_data['sender'], phone_id)
         return {'step': 'get_receiver_name', 'user': user.to_dict()}
     elif prompt.lower() in ["no", "n"]:
         # Remove delivery fee if added
@@ -471,59 +471,99 @@ def handle_get_phone(prompt, user_data, phone_id):
 
 def handle_confirm_details(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
-    
+
     if prompt.lower() in ["yes", "y"]:
-        order_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        payment_info = (
-            f"Please make payment using one of the following options:\n\n"
-            f"1. EFT\nBank: FNB\nName: Zimbogrocer (Pty) Ltd\nAccount: 62847698167\nBranch Code: 250655\nSwift Code: FIRNZAJJ\nReference: {order_id}\n"
-            f"2. Pay at supermarkets: SHOPRITE, CHECKERS, USAVE, PICK N PAY, GAME, MAKRO or SPAR using Mukuru wicode\n\n"
-            f"3. World Remit Transfer (payment details provided upon request)\n\n"
-            f"4. Western Union (payment details provided upon request)\n\n"
-            f"Order ID: {order_id}"
+        # Ask the user to select a payment method
+        payment_prompt = (
+            "Please select a payment method:\n"
+            "1. EFT\n"
+            "2. Pay at supermarket (Mukuru wicode)\n"
+            "3. World Remit\n"
+            "4. Western Union"
         )
-        
-        # Save order to database
-        order_data = {
-            'order_id': order_id,
-            'user_data': user.to_dict(),
-            'timestamp': datetime.now(),
-            'status': 'pending',
-            'total_amount': user.get_cart_total()
-        }
-        orders_collection.insert_one(order_data)
-        
-        # Notify owner
-        owner_message = (
-            f"New Order #{order_id}\n"
-            f"From: {user.payer_name} ({user.payer_phone})\n"
-            f"Receiver: {user.checkout_data['receiver_name']}\n"
-            f"Address: {user.checkout_data['address']}\n"
-            f"Phone: {user.checkout_data['phone']}\n"
-            f"Items:\n{show_cart(user)}"
-        )
-        send(owner_message, owner_phone, phone_id)
-        
-        send(
-            f"Order placed! 🛒\nOrder ID: {order_id}\n\n"
-            f"{show_cart(user)}\n\n"
-            f"Receiver: {user.checkout_data['receiver_name']}\n"
-            f"Address: {user.checkout_data['address']}\n"
-            f"Phone: {user.checkout_data['phone']}\n\n"
-            f"{payment_info}\n\nWould you like to place another order? (yes/no)",
-            user_data['sender'], phone_id
-        )
-        
-        user.clear_cart()
+        send(payment_prompt, user_data['sender'], phone_id)
+
+        # Update state to wait for payment method selection
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
-            'step': 'ask_place_another_order'
+            'step': 'await_payment_selection'
         })
-        
+
         return {
-            'step': 'ask_place_another_order',
+            'step': 'await_payment_selection',
             'user': user.to_dict()
         }
+
+
+    def handle_payment_selection(selection, user_data, phone_id):
+    user = User.from_dict(user_data['user'])
+    order_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+    # Map selection to payment method
+    payment_methods = {
+        "1": (
+            "EFT\nBank: FNB\nName: Zimbogrocer (Pty) Ltd\n"
+            "Account: 62847698167\nBranch Code: 250655\n"
+            "Swift Code: FIRNZAJJ\nReference: " + order_id
+        ),
+        "2": "Pay at supermarkets using Mukuru wicode",
+        "3": "World Remit Transfer (details provided upon request)",
+        "4": "Western Union (details provided upon request)"
+    }
+
+    payment_text = payment_methods.get(selection)
+    if not payment_text:
+        send("Invalid selection. Please enter a number between 1 and 4.", user_data['sender'], phone_id)
+        return {
+            'step': 'await_payment_selection',
+            'user': user.to_dict()
+        }
+
+    # Save order to DB
+    order_data = {
+        'order_id': order_id,
+        'user_data': user.to_dict(),
+        'timestamp': datetime.now(),
+        'status': 'pending',
+        'total_amount': user.get_cart_total()
+    }
+    orders_collection.insert_one(order_data)
+
+    # Notify owner
+    owner_message = (
+        f"New Order #{order_id}\n"
+        f"From: {user.payer_name} ({user.payer_phone})\n"
+        f"Receiver: {user.checkout_data['receiver_name']}\n"
+        f"Address: {user.checkout_data['address']}\n"
+        f"Phone: {user.checkout_data['phone']}\n"
+        f"Items:\n{show_cart(user)}"
+    )
+    send(owner_message, owner_phone, phone_id)
+
+    # Send confirmation to user
+    send(
+        f"Order placed! 🛒\nOrder ID: {order_id}\n\n"
+        f"{show_cart(user)}\n\n"
+        f"Receiver: {user.checkout_data['receiver_name']}\n"
+        f"Address: {user.checkout_data['address']}\n"
+        f"Phone: {user.checkout_data['phone']}\n\n"
+        f"Payment Method: {payment_text}\n\n"
+        f"Would you like to place another order? (yes/no)",
+        user_data['sender'], phone_id
+    )
+
+    user.clear_cart()
+    update_user_state(user_data['sender'], {
+        'user': user.to_dict(),
+        'step': 'ask_place_another_order'
+    })
+
+    return {
+        'step': 'ask_place_another_order',
+        'user': user.to_dict()
+    }
+
+    
     else:
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
