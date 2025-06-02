@@ -439,25 +439,54 @@ def handle_choose_delivery_or_pickup(prompt, user_data, phone_id):
     }
 
 
-def handle_get_receiver_name_pickup(prompt, name, user_data, phone_id):
+def handle_get_receiver_name_pickup(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     user.checkout_data['receiver_name'] = prompt.strip()
 
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
-        'step': 'get_id'
+        'step': 'get_id_pickup'
     })
     send("Please provide the receiver's ID number.", user_data['sender'], phone_id)
     return {
-        'step': 'get_id',
+        'step': 'get_id_pickup',
         'user': user.to_dict()
     }
 
 
-def handle_get_id_pickup(prompt, id_number, user_data, phone_id):
+def handle_get_id_pickup(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     user.checkout_data['receiver_id'] = prompt.strip()
 
+    # Send pickup address and proceed to payment
+    send(
+        "Thanks! Please collect your order at:\n"
+        "*123 Main Street, Harare CBD*\n"
+        "Hours: 8am - 5pm, Mon-Sat.\n\n"
+        "Now let's choose a payment method.",
+        user_data['sender'], phone_id
+    )
+
+    payment_prompt = (
+        "Please select a payment method:\n"
+        "1. EFT\n"
+        "2. Pay at supermarket (Mukuru wicode)\n"
+        "3. World Remit\n"
+        "4. Western Union"
+    )
+    send(payment_prompt, user_data['sender'], phone_id)
+
+    update_user_state(user_data['sender'], {
+        'user': user.to_dict(),
+        'step': 'await_payment_selection'
+    })
+
+    return {
+        'step': 'await_payment_selection',
+        'user': user.to_dict()
+    }
+
+    
     if user.checkout_data.get("delivery_method") == "pickup":
         send("Pickup Address:\n42A Mbuya Nehanda St, Harare\nMon–Fri, 9am–5pm", user_data['sender'], phone_id)
 
