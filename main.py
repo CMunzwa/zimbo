@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from orders import OrderSystem 
+import traceback
 
 
 logging.basicConfig(level=logging.INFO)
@@ -265,6 +266,7 @@ def handle_ask_quantity(prompt, user_data, phone_id):
 
     except Exception as e:
         print(f"[ERROR] Exception during cart update: {e}")
+        traceback.print_exc()  # This gives you the exact error and line number
         send("Something went wrong while adding the item. Please try again.", user_data['sender'], phone_id)
         return {'step': 'ask_quantity', 'selected_product': user_data.get("selected_product", {})}
 
