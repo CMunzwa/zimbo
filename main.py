@@ -441,36 +441,56 @@ def handle_choose_delivery_or_pickup(choice, user_data, phone_id):
 
 def handle_get_receiver_name_pickup(name, user_data, phone_id):
     user = User.from_dict(user_data['user'])
-    user.checkout_data['receiver_name'] = name
+    user.checkout_data['receiver_name'] = prompt.strip()
 
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
-        'step': 'get_id_pickup'
+        'step': 'get_id'
     })
-    send("What's the ID number of the receiver?", user_data['sender'], phone_id)
+    send("Please provide the receiver's ID number.", user_data['sender'], phone_id)
     return {
-        'step': 'get_id_pickup',
+        'step': 'get_id',
         'user': user.to_dict()
     }
 
 
 def handle_get_id_pickup(id_number, user_data, phone_id):
     user = User.from_dict(user_data['user'])
-    user.checkout_data['id_number'] = id_number
+    user.checkout_data['receiver_id'] = prompt.strip()
 
-    pickup_address = "Pickup Location: 123 Mbare Street, Harare. Open Mon–Sat, 8am–5pm."
-    send(f"Thank you! Please collect your order at:\n\n{pickup_address}", user_data['sender'], phone_id)
+    if user.checkout_data.get("delivery_method") == "pickup":
+        send("Pickup Address:\n123 Nelson Mandela Ave, Harare\nMon–Fri, 9am–5pm", user_data['sender'], phone_id)
 
-    user.clear_cart()
-    update_user_state(user_data['sender'], {
-        'user': user.to_dict(),
-        'step': 'ask_place_another_order'
-    })
+        # Proceed to payment options
+        payment_prompt = (
+            "Please select a payment method:\n"
+            "1. EFT\n"
+            "2. Pay at supermarket (Mukuru wicode)\n"
+            "3. World Remit\n"
+            "4. Western Union"
+        )
+        send(payment_prompt, user_data['sender'], phone_id)
 
-    return {
-        'step': 'ask_place_another_order',
-        'user': user.to_dict()
-    }
+        update_user_state(user_data['sender'], {
+            'user': user.to_dict(),
+            'step': 'await_payment_selection'
+        })
+        return {
+            'step': 'await_payment_selection',
+            'user': user.to_dict()
+        }
+
+    else:
+        # Proceed to get phone for delivery flow
+        update_user_state(user_data['sender'], {
+            'user': user.to_dict(),
+            'step': 'get_phone'
+        })
+        send("Please provide the receiver's phone number.", user_data['sender'], phone_id)
+        return {
+            'step': 'get_phone',
+            'user': user.to_dict()
+        }
 
 
 def handle_ask_checkout(prompt, user_data, phone_id):
