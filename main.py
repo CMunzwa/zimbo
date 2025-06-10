@@ -668,6 +668,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"ID: {user.checkout_data['receiver_id']}\n"
             f"Address: {user.checkout_data.get('address', 'N/A')}\n"
             f"Phone: {user.checkout_data.get('phone', 'N/A')}\n"
+            f"Payment Method: {payment_text}\n\n"
             f"Items:\n{show_cart(user)}"
         )
         send(owner_message, owner_phone, phone_id)
@@ -684,6 +685,10 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"Would you like to place another order? (yes/no)",
             user_data['sender'], phone_id
         )
+
+        # Save the message to Redis
+        message_key = f"user_message:{order_id}"
+        redis_client.setex(message_key, user_message)  
     
         # Clear cart and update state
         user.clear_cart()
