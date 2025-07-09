@@ -37,10 +37,11 @@ class User:
 
     def add_to_cart(self, product, quantity):
         for item in self.cart:
-            if item['product'].name == product.name:
-                item['quantity'] += quantity
+            if item.name == product.name:
+                item.quantity += quantity
                 return
-        self.cart.append({"product": product, "quantity": quantity})
+        product.quantity = quantity
+        self.cart.append(product)
 
     
     def view_cart(self):
