@@ -625,34 +625,58 @@ def handle_get_receiver_name_pickup(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'get_phone_pickup'
     })
-    send("Enter receiver's name.", user_data['sender'], phone_id)
+    send("Please provide the receiver's phone number.", user_data['sender'], phone_id)
     return {
         'step': 'get_phone_pickup',
         'user': user.to_dict()
     }
 
+
 def handle_get_phone_pickup(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
-    user.checkout_data["phone"] = prompt    
+    user.checkout_data['receiver_phone'] = prompt.strip()
+
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
         'step': 'get_id_pickup'
     })
-    send("Enter receiver's phone number.", user_data['sender'], phone_id)
+    send("Please provide the receiver's ID number.", user_data['sender'], phone_id)
+
     return {
         'step': 'get_id_pickup',
         'user': user.to_dict()
     }
 
 
+
 def handle_get_id_pickup(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     user.checkout_data['receiver_id'] = prompt.strip()
+
+    # Send pickup address and proceed to payment
+    send(
+        "Thanks! Please collect your order at:\n"
+        "*123 Main Street, Harare CBD*\n"
+        "Hours: 8am - 5pm, Mon-Sat.\n\n"
+        "Now let's choose a payment method.",
+        user_data['sender'], phone_id
+    )
+
+    payment_prompt = (
+        "Please select a payment method:\n"
+        "1. EFT\n"
+        "2. Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
+        "3. World Remit\n"
+        "4. Western Union\n"
+        "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
+    )
+    send(payment_prompt, user_data['sender'], phone_id)
+
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
         'step': 'await_payment_selection'
     })
-    send("Enter receiver's id number.", user_data['sender'], phone_id)
+
     return {
         'step': 'await_payment_selection',
         'user': user.to_dict()
@@ -669,7 +693,7 @@ def handle_get_id_pickup(prompt, user_data, phone_id):
             "2. Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
             "3. World Remit\n"
             "4. Western Union\n"
-            "5. Mukuru Direct Transfer"
+            "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
         )
         send(payment_prompt, user_data['sender'], phone_id)
 
