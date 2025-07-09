@@ -911,9 +911,7 @@ def handle_payment_selection(selection, user_data, phone_id):
         )
         send(confirmation_message, sender, phone_id)
 
-        # 👉 Connect user to human agent after sending confirmation
-        connect_to_agent(sender, phone_id)
-
+        
         # Clear cart and update state
         user.clear_cart()
         update_user_state(sender, {
@@ -921,9 +919,10 @@ def handle_payment_selection(selection, user_data, phone_id):
             'step': 'ask_place_another_order',
             'selected_payment_method': selection
         })
+        
     
         return {
-            'step': 'ask_place_another_order',
+            'step': 'connect_to_agent',
             'user': user.to_dict()
         }
     
@@ -939,7 +938,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             'user': user.to_dict()
         }
 
-def connect_to_agent(sender, phone_id, payment_method):
+def handle_connect_to_agent(sender, phone_id, payment_method):
     # Notify agent
     agent_message = (
         f"🔔 A user needs help with payment.\n"
@@ -961,6 +960,10 @@ def connect_to_agent(sender, phone_id, payment_method):
 
     # Optionally: store a reverse map agent → user
     redis_client.setex(f"agent_reply_to:{agent_phone}", 1800, sender)  # expires in 30 min
+    return {
+            'step': 'ask_place_another_order',
+            'user': user.to_dict()
+        }
 
 
 def handle_ask_place_another_order(prompt, user_data, phone_id):
@@ -1082,6 +1085,7 @@ action_mapping = {
     "get_phone": handle_get_phone,
     "confirm_details": handle_confirm_details,
     "await_payment_selection": lambda p, ud, pid: handle_payment_selection(p, ud, pid),
+    "connect_to_agent": handle_connect_to_agent,
     "ask_place_another_order": handle_ask_place_another_order,
     "choose_delivery_or_pickup": handle_choose_delivery_or_pickup,
     "get_receiver_name_pickup": handle_get_receiver_name_pickup,
