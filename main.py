@@ -286,7 +286,7 @@ def handle_choose_product(prompt, user_data, phone_id):
         if index < len(products):
             selected_product = products[index]
             if not isinstance(selected_product, Product):
-                send(\"⚠️ Product data is invalid. Please type '4' to add an item again.\", user_data['sender'], phone_id)
+                send("⚠️ Product data is invalid. Please type '4' to add an item again.", user_data['sender'], phone_id)
                 return {'step': 'start'}
 
             update_user_state(user_data['sender'], {
