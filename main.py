@@ -172,6 +172,12 @@ def admin_set_stock(product_name, stock_value):
                 product.stock = stock_value
                 product.active = stock_value > 0
 
+                # ✅ Save to Redis
+                redis_client.set(f"stock:{product.name}", stock_value)
+
+                return f"✅ Stock for *{product.name}* updated to {stock_value}."
+    return f"❌ Product *{product_name}* not found."
+
 
 def handle_next_category(user_data, phone_id):
     if 'category_names' not in user_data or 'current_category_index' not in user_data:
