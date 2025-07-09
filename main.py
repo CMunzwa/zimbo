@@ -338,11 +338,16 @@ def handle_ask_quantity(prompt, user_data, phone_id):
     pd = user_data['selected_product']
 
     # ✅ Add safeguard here
-    if isinstance(pd, str):
-        send("⚠️ Product data is corrupted. Please reselect the product.", user_data['sender'], phone_id)
-        return {'step': 'start'}  # or whatever your initial step is
-
-    product = Product(pd['name'], pd['price'], pd.get('description', ''))
+    if isinstance(pd, dict):
+        name = pd['name']
+        price = pd['price']
+        description = pd.get('description', '')
+    else:
+        name = pd.name
+        price = pd.price
+        description = getattr(pd, 'description', '')
+    
+    product = Product(name, price, description)
     user.add_to_cart(product, qty)
 
     update_user_state(user_data['sender'], {
