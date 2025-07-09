@@ -18,7 +18,6 @@ wa_token = os.environ.get("WA_TOKEN")
 phone_id = os.environ.get("PHONE_ID")
 gen_api = os.environ.get("GEN_API")
 owner_phone = os.environ.get("OWNER_PHONE")
-agent_phone = os.getenv("AGENT_PHONE")
 redis_url = os.environ.get("REDIS_URL")
 ADMIN_NUMBERS = [
     "263719835124",  
@@ -911,7 +910,6 @@ def handle_payment_selection(selection, user_data, phone_id):
         )
         send(confirmation_message, sender, phone_id)
 
-        
         # Clear cart and update state
         user.clear_cart()
         update_user_state(sender, {
@@ -919,7 +917,6 @@ def handle_payment_selection(selection, user_data, phone_id):
             'step': 'ask_place_another_order',
             'selected_payment_method': selection
         })
-        
     
         return {
             'step': 'ask_place_another_order',
@@ -937,34 +934,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             'step': 'await_payment_selection',
             'user': user.to_dict()
         }
-
-#def handle_connect_to_agent(sender, phone_id, payment_method):
-    # Notify agent
-    agent_message = (
-        #f"🔔 A user needs help with payment.\n"
-        #f"User: {sender}\n"
-        #f"Selected Method:\n{payment_method}\n\n"
-        #f"Please reply here, and your message will be forwarded to the user."
-    #)
-    #send(agent_message, agent_phone, phone_id)
-
-    # Inform the user
-    #send("✅ Connecting you to a human agent for more help with payment...", sender, phone_id)
-
-    # Save state to track that this user is awaiting agent help
-    #update_user_state(sender, {
-     #   'awaiting_agent_reply': True,
-      #  'last_payment_method': payment_method,
-       # 'linked_agent': agent_phone
-    #})
-
-    # Optionally: store a reverse map agent → user
-    #redis_client.setex(f"agent_reply_to:{agent_phone}", 1800, sender)  # expires in 30 min
-    #return {
-     #       'step': 'ask_place_another_order',
-      #      'user': user.to_dict()
-       # }
-
+        
 
 def handle_ask_place_another_order(prompt, user_data, phone_id):
     if prompt.lower() in ["yes", "y", "1"]:
@@ -1085,7 +1055,6 @@ action_mapping = {
     "get_phone": handle_get_phone,
     "confirm_details": handle_confirm_details,
     "await_payment_selection": lambda p, ud, pid: handle_payment_selection(p, ud, pid),
-    "connect_to_agent": handle_connect_to_agent,
     "ask_place_another_order": handle_ask_place_another_order,
     "choose_delivery_or_pickup": handle_choose_delivery_or_pickup,
     "get_receiver_name_pickup": handle_get_receiver_name_pickup,
@@ -1213,45 +1182,27 @@ def webhook():
     elif request.method == "POST":
         data = request.get_json()
         logging.info(f"Incoming webhook data: {data}")
-    
+
         try:
             entry = data["entry"][0]
             changes = entry["changes"][0]
             value = changes["value"]
             phone_id = value["metadata"]["phone_number_id"]
-    
+
             messages = value.get("messages", [])
             if messages:
                 message = messages[0]
                 sender = message["from"]
-    
+
                 if "text" in message:
                     prompt = message["text"]["body"].strip()
-    
-                    # ✅ Check if sender is an agent replying to a user
-                    user_to_notify_key = f"agent_reply_to:{sender}"
-                    user_to_notify = redis_client.get(user_to_notify_key)
-    
-                    if user_to_notify:
-                        user_to_notify = user_to_notify.decode()
-                        send(f"👤 Agent: {prompt}", user_to_notify, phone_id)
-    
-                        # Optionally clear the mapping if it's a one-time reply
-                        redis_client.delete(user_to_notify_key)
-    
-                        # Also update the user state to indicate reply has been sent
-                        update_user_state(user_to_notify, {'awaiting_agent_reply': False})
-                    else:
-                        # Regular user message
-                        message_handler(prompt, sender, phone_id)
+                    message_handler(prompt, sender, phone_id)
                 else:
                     send("Please send a text message", sender, phone_id)
-    
         except Exception as e:
             logging.error(f"Error processing webhook: {e}", exc_info=True)
-    
-        return jsonify({"status": "ok"}), 200
 
+        return jsonify({"status": "ok"}), 200
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
