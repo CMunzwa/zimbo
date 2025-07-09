@@ -42,6 +42,17 @@ class User:
                 return
         self.cart.append({"product": product, "quantity": quantity})
 
+    
+    def view_cart(self):
+        return [
+            {
+                "name": item.name,
+                "quantity": item.quantity,
+                "total_price": item.price * item.quantity
+            }
+            for item in self.cart
+        ]
+
     def remove_from_cart(self, product_name):
         self.cart = [item for item in self.cart if item["product"].name.lower() != product_name.lower()]
 
