@@ -300,14 +300,17 @@ class OrderSystem:
         return all_products
 
     def get_products_by_category(self):
-        products_by_cat = {}
-        for category in self.categories.values():
-            product_lines = []
-            for i, product in enumerate(category.products, start=1):
-                line = f"{i}. {product.name} - ${product.price:.2f}"
-                product_lines.append(line)
-            products_by_cat[category.name] = "\n".join(product_lines)
-        return products_by_cat
+            products_by_cat = {}
+            for category in self.categories.values():
+                product_lines = []
+                # ✅ Filter only available products
+                available_products = [p for p in category.products if p.is_available()]
+                for i, product in enumerate(available_products, start=1):
+                    line = f"{i}. {product.name} - ${product.price:.2f}"
+                    product_lines.append(line)
+                products_by_cat[category.name] = "\n".join(product_lines)
+            return products_by_cat
+
 
 
     
