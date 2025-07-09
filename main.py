@@ -146,6 +146,7 @@ def handle_save_name(prompt, user_data, phone_id):
     send(
         f"Hie {user.payer_name}! Here are products from *{first_category}*:\n"
         f"{first_products}\n\n"
+        f"If you'd like to start over send 'hie'\n\n"
         f"If you're done shopping in the *{first_category}* category.\n"
         "Type 'more' to see the next category.",
         user_data['sender'], phone_id
@@ -191,7 +192,7 @@ def handle_next_category(user_data, phone_id):
     next_index = current_index + 1
 
     if next_index >= len(category_names):
-        send("No more categories. You can now select a product or type 'menu' to go back.",
+        send("No more categories. You can now select a product or type 'back' to go back.",
              user_data['sender'], phone_id)
         return {
             'step': 'choose_product',
@@ -216,6 +217,7 @@ def handle_next_category(user_data, phone_id):
     send(
         f"Here are products from *{next_category}*:\n"
         f"{next_products}\n\n"
+        f"If you'd like to start over send 'hie'\n\n"
         f"If you're done shopping in the *{next_category}* category.\n"
         "Type 'more' to see the next category or 'back' to see the previous one.",
         user_data['sender'], phone_id
@@ -232,7 +234,7 @@ def handle_next_category(user_data, phone_id):
 
 def handle_previous_category(user_data, phone_id):
     if 'category_names' not in user_data or 'current_category_index' not in user_data:
-        send("Something went wrong. Please type '4' to restart product browsing.", user_data['sender'], phone_id)
+        send("Something went wrong. Please type 'hie' to restart product browsing.", user_data['sender'], phone_id)
         return {'step': 'choose_product'}
 
     user = User.from_dict(user_data['user'])
@@ -258,6 +260,7 @@ def handle_previous_category(user_data, phone_id):
     send(
         f"Here are products from *{current_category}*:\n"
         f"{product_text}\n\n"
+        f"If you'd like to start over send 'hie'\n\n"
         f"End of *{current_category}* category.\n"
         "Type 'more' to see next category or 'back' to see previous one.",
         user_data['sender'], phone_id
@@ -282,7 +285,7 @@ def handle_choose_product(prompt, user_data, phone_id):
         current_index = user_data.get("current_category_index", 0)
 
         if not category_names or current_index >= len(category_names):
-            send("Your session expired. Please type '4' to add an item again.", user_data['sender'], phone_id)
+            send("Your session expired. Please type 'hie' to restart.", user_data['sender'], phone_id)
             return {'step': 'choose_product'}
 
         current_category = category_names[current_index]
@@ -299,7 +302,7 @@ def handle_choose_product(prompt, user_data, phone_id):
                 'selected_product': selected_product.__dict__,
                 'step': 'ask_quantity'
             })
-            send(f"You selected {selected_product.name}. How many would you like to add?", user_data['sender'], phone_id)
+            send(f"You selected {selected_product.name}. How many would you like to add?\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
             return {'step': 'ask_quantity', 'selected_product': selected_product.__dict__}
         else:
             send("Invalid product number. Try again.", user_data['sender'], phone_id)
@@ -335,12 +338,13 @@ def handle_ask_quantity(prompt, user_data, phone_id):
         'step': 'post_add_menu'
     })
     send('''Item added to your cart.
-What would you like to do next?
-1. View Groceries Selected
-2. Remove Groceries Selected
-3. Remove Item
-4. Add Item''', user_data['sender'], phone_id)
-    return {'step': 'post_add_menu', 'user': user.to_dict()}
+        What would you like to do next?
+        1. View Groceries Selected
+        2. Remove Groceries Selected
+        3. Remove Item
+        4. Add Item\n\n
+        If you'd like to start over send 'hie'\n\n''', user_data['sender'], phone_id)
+            return {'step': 'post_add_menu', 'user': user.to_dict()}
 
     
 def handle_post_add_menu(prompt, user_data, phone_id):
@@ -352,7 +356,7 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'choose_delivery_or_pickup'
     })
-        send("Would you like:\n1. 🚚 Delivery\n2. 🛍️ Pickup (Harare CBD)", user_data['sender'], phone_id)
+        send("Would you like:\n1. 🚚 Delivery\n2. 🛍️ Pickup (Harare CBD)\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {'step': 'choose_delivery_or_pickup', 'user': user.to_dict()}
         
         update_user_state(user_data['sender'], {
@@ -363,7 +367,8 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         send(
             cart_message + "\n\nWhat would you like to do next?\n"
             "1️. Add more items\n"
-            "2️. Continue to delivery",
+            "2️. Continue to delivery\n\n"
+            f"If you'd like to start over send 'hie'\n\n",
             user_data['sender'],
             phone_id
         )
@@ -379,7 +384,7 @@ def handle_post_add_menu(prompt, user_data, phone_id):
             'user': user.to_dict(),
             'step': 'post_add_menu'
         })
-        send("Cart cleared.\nWhat would you like to do next?\n1 View Groceries Selected\n4 Add Item", user_data['sender'], phone_id)
+        send("Groceries Removed.\nWhat would you like to do next?\n1 View Groceries Selected\n4 Add Item\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {
             'step': 'post_add_menu',
             'user': user.to_dict()
@@ -387,7 +392,7 @@ def handle_post_add_menu(prompt, user_data, phone_id):
     elif prompt.lower() in ["3", "remove"]:
         cart = user.get_cart_contents()
         if not cart:
-            send("Your cart is empty. Nothing to remove.", user_data['sender'], phone_id)
+            send("Your cart is empty. Nothing to remove.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
             return {'step': 'post_add_menu', 'user': user.to_dict()}
     
         numbered_cart = "\n".join([f"{i+1}. {p.name} x{q}" for i, (p, q) in enumerate(cart)])
@@ -395,7 +400,7 @@ def handle_post_add_menu(prompt, user_data, phone_id):
             'step': 'await_remove_item',
             'user': user.to_dict()
         })
-        send("Please select the item number to remove:\n" + numbered_cart, user_data['sender'], phone_id)
+        send("Please select the item number to remove:\n\nIf you'd like to start over send 'hie'\n\n" + numbered_cart, user_data['sender'], phone_id)
         return {
             'step': 'await_remove_item',
             'user': user.to_dict()
@@ -426,6 +431,7 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         send(
             f"Sure! Here are products from *{current_category}*:\n"
             f"{first_products}\n\n"
+            f"If you'd like to start over send 'hie'\n\n"
             f"If you're done shopping in the *{current_category}* category.\n"
             "Type 'more' to see the next category or 'back' to see the previous one.",
             user_data['sender'],
@@ -455,7 +461,7 @@ def handle_await_remove_item(prompt, user_data, phone_id):
                 },
                 'user': user.to_dict()
             })
-            send(f"How many of *{product.name}* would you like to remove? (You have {quantity})", user_data['sender'], phone_id)
+            send(f"How many of *{product.name}* would you like to remove? (You have {quantity})\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
             return {'step': 'await_remove_quantity', 'user': user.to_dict()}
         else:
             raise IndexError
@@ -499,7 +505,7 @@ def handle_await_remove_quantity(prompt, user_data, phone_id):
 
     send(
         f"✅ Removed {qty_to_remove} x {item_name}.\n{show_cart(user)}\n"
-        "What would you like to do next?\n1 Continue to Delivery\n4 Add Item",
+        "What would you like to do next?\n1 Continue to Delivery\n4 Add Item\n\nIf you'd like to start over send 'hie'\n\n",
         user_data['sender'], phone_id
     )
     return {'step': 'post_add_menu', 'user': user.to_dict()}
@@ -539,7 +545,7 @@ def handle_get_area(prompt, user_data, phone_id):
             'step': 'ask_checkout'
         })
 
-        send(f"{show_cart(user)}\nWould you like to checkout? (1.yes/2.no)", user_data['sender'], phone_id)
+        send(f"{show_cart(user)}\nWould you like to checkout? (1.yes\n2.no\n\nIf you'd like to start over send 'hie'\n\n)", user_data['sender'], phone_id)
         return {
             'step': 'ask_checkout',
             'user': user.to_dict()
@@ -547,7 +553,7 @@ def handle_get_area(prompt, user_data, phone_id):
 
     # INVALID area
     else:
-        send(f"❌ Invalid area. Please choose from:\n{list_delivery_areas(delivery_areas)}", user_data['sender'], phone_id)
+        send(f"❌ Invalid area. Please choose from:\n{list_delivery_areas(delivery_areas)}\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {
             'step': 'get_area',
             'delivery_areas': delivery_areas,
@@ -567,7 +573,7 @@ def handle_choose_delivery_or_pickup(prompt, user_data, phone_id):
             'delivery_type': 'pickup',
             'area': 'Harare'
         })
-        send("What's the full name of the receiver?", user_data['sender'], phone_id)
+        send("What's the full name of the receiver?\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {
             'step': 'get_receiver_name_pickup',
             'user': user.to_dict()
@@ -592,7 +598,7 @@ def handle_choose_delivery_or_pickup(prompt, user_data, phone_id):
 
         if not delivery_areas:
             logging.error("delivery_areas is empty or None.")
-            send("Delivery options are currently unavailable. Please try again later.", user_data['sender'], phone_id)
+            send("Delivery options are currently unavailable. Please try again later.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
             return {'step': 'choose_delivery_or_pickup', 'user': user.to_dict()}
 
         area_names = list(delivery_areas.keys())
@@ -610,7 +616,7 @@ def handle_choose_delivery_or_pickup(prompt, user_data, phone_id):
             'user': user.to_dict()
         }
 
-    send("Please reply with 1 for Delivery or 2 for Pickup.", user_data['sender'], phone_id)
+    send("Please reply with 1 for Delivery or 2 for Pickup.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
     return {
         'step': 'choose_delivery_or_pickup',
         'user': user.to_dict()
@@ -625,7 +631,7 @@ def handle_get_receiver_name_pickup(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'get_phone_pickup'
     })
-    send("Please provide the receiver's phone number.", user_data['sender'], phone_id)
+    send("Please provide the receiver's phone number.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
     return {
         'step': 'get_phone_pickup',
         'user': user.to_dict()
@@ -640,7 +646,7 @@ def handle_get_phone_pickup(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'get_id_pickup'
     })
-    send("Please provide the receiver's ID number.", user_data['sender'], phone_id)
+    send("Please provide the receiver's ID number.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
 
     return {
         'step': 'get_id_pickup',
@@ -658,7 +664,8 @@ def handle_get_id_pickup(prompt, user_data, phone_id):
         "Thanks! Please collect your order at:\n"
         "*123 Main Street, Harare CBD*\n"
         "Hours: 8am - 5pm, Mon-Sat.\n\n"
-        "Now let's choose a payment method.",
+        "Now let's choose a payment method.\n\n"
+        "If you'd like to start over send 'hie'\n\n",
         user_data['sender'], phone_id
     )
 
@@ -684,7 +691,7 @@ def handle_get_id_pickup(prompt, user_data, phone_id):
 
     
     if user.checkout_data.get("delivery_method") == "pickup":
-        send("Pickup Address:\n42A Mbuya Nehanda St, Harare\nMon–Fri, 9am–5pm", user_data['sender'], phone_id)
+        send("Pickup Address:\n42A Mbuya Nehanda St, Harare\nMon–Fri, 9am–5pm\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
 
         # Proceed to payment options
         payment_prompt = (
@@ -712,7 +719,7 @@ def handle_get_id_pickup(prompt, user_data, phone_id):
             'user': user.to_dict(),
             'step': 'get_phone'
         })
-        send("Please provide the receiver's phone number.", user_data['sender'], phone_id)
+        send("Please provide the receiver's phone number.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {
             'step': 'get_phone',
             'user': user.to_dict()
@@ -724,7 +731,7 @@ def handle_ask_checkout(prompt, user_data, phone_id):
     
     if prompt.lower() in ["yes", "y", "1"]:
         update_user_state(user_data['sender'], {'step': 'get_receiver_name'})
-        send("Please enter the receiver's full name as on national ID.", user_data['sender'], phone_id)
+        send("Please enter the receiver's full name as on national ID.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {'step': 'get_receiver_name', 'user': user.to_dict()}
     elif prompt.lower() in ["no", "n", "2"]:
         # Remove delivery fee if added
@@ -733,10 +740,10 @@ def handle_ask_checkout(prompt, user_data, phone_id):
             'user': user.to_dict(),
             'step': 'post_add_menu'
         })
-        send("What would you like to do next?\n1 View Groceries Selected\n2 Remove Groceries Selected\n3 Remove Item\n4 Add Item", user_data['sender'], phone_id)
+        send("What would you like to do next?\n1 View Groceries Selected\n2 Remove Groceries Selected\n3 Remove Item\n4 Add Item\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {'step': 'post_add_menu', 'user': user.to_dict()}
     else:
-        send("Please respond with 'yes' or 'no'.", user_data['sender'], phone_id)
+        send("Please respond with 'yes' or 'no'.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
         return {'step': 'ask_checkout', 'user': user.to_dict()}
 
 def handle_get_receiver_name(prompt, user_data, phone_id):
@@ -746,7 +753,7 @@ def handle_get_receiver_name(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'get_address'
     })
-    send("Enter the delivery address.", user_data['sender'], phone_id)
+    send("Enter the delivery address.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
     return {
         'step': 'get_address',
         'user': user.to_dict()
@@ -759,7 +766,7 @@ def handle_get_address(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'get_id'
     })
-    send("Enter receiver's ID number.", user_data['sender'], phone_id)
+    send("Enter receiver's ID number.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
     return {
         'step': 'get_id',
         'user': user.to_dict()
@@ -772,7 +779,7 @@ def handle_get_id(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'get_phone'
     })
-    send("Enter receiver's phone number.", user_data['sender'], phone_id)
+    send("Enter receiver's phone number.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
     return {
         'step': 'get_phone',
         'user': user.to_dict()
@@ -828,7 +835,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
 
     elif prompt.lower() in ["no", "n", "2"]:
         # User wants to correct delivery details — restart flow from receiver name
-        send("No problem! Let's correct the details.\nPlease enter the receiver's full name again.", sender, phone_id)
+        send("No problem! Let's correct the details.\nPlease enter the receiver's full name again.\n\nIf you'd like to start over send 'hie'\n\n", sender, phone_id)
 
         update_user_state(sender, {
             'user': user.to_dict(),
@@ -841,7 +848,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
         }
 
     else:
-        send("Please reply with 'yes' or 'no'.", sender, phone_id)
+        send("Please reply with 'yes' or 'no'.\n\nIf you'd like to start over send 'hie'\n\n", sender, phone_id)
         return {
             'step': 'confirm_details',
             'user': user.to_dict()
@@ -924,7 +931,7 @@ def handle_payment_selection(selection, user_data, phone_id):
         }
     
     else:
-        send("Invalid selection. Please enter a number between 1 and 5.", sender, phone_id)
+        send("Invalid selection. Please enter a number between 1 and 5.\n\nIf you'd like to start over send 'hie'\n\n", sender, phone_id)
         update_user_state(sender, {
             'user': user.to_dict(),
             'step': 'await_payment_selection',
@@ -954,6 +961,7 @@ def handle_ask_place_another_order(prompt, user_data, phone_id):
         send(
             f"Alright! Here are products from *{first_category}*:\n"
             f"{first_products}\n\n"
+            f"If you'd like to start over send 'hie'\n\n"
             f"If you're done shopping in the *{first_category}* category.\n"
             "Type 'more' to see the next category.",
             user_data['sender'], phone_id
@@ -966,13 +974,15 @@ def handle_ask_place_another_order(prompt, user_data, phone_id):
             send(
                 "Thank you! 🎉\n"
                 "Your *Wicode* will be sent to your WhatsApp number shortly. Please use it to pay at "
-                "SHOPRITE / CHECKERS / USAVE / PICK N PAY / GAME / MAKRO / SPAR.",
+                "SHOPRITE / CHECKERS / USAVE / PICK N PAY / GAME / MAKRO / SPAR.\n\n"
+                "If you'd like to start over send 'hie'\n\n",
                 user_data['sender'], phone_id
             )
         else:
             send(
                 "Once your payment has been made, please send your *Proof of Payment (POP)* to "
-                "*+263785019494* so that delivery can be effected. ✅",
+                "*+263785019494* so that delivery can be effected. ✅\n\n"
+                "If you'd like to start over send 'hie'\n\n",
                 user_data['sender'], phone_id
             )
     
@@ -981,7 +991,7 @@ def handle_ask_place_another_order(prompt, user_data, phone_id):
 
 
 def handle_default(prompt, user_data, phone_id):
-    send("Sorry, I didn't understand that. Please try again.", user_data['sender'], phone_id)
+    send("Sorry, I didn't understand that. Please try again.\n\nIf you'd like to start over send 'hie'\n\n", user_data['sender'], phone_id)
     return {'step': user_data.get('step', 'ask_name')}
 
 
