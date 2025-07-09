@@ -343,6 +343,7 @@ def handle_ask_quantity(prompt, user_data, phone_id):
     # ✅ Update state
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
+        'selected_product': product.__dict__,
         'step': 'post_add_menu'
     })
 
