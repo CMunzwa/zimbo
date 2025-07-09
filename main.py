@@ -1207,46 +1207,46 @@ def webhook():
         return "Failed", 403
 
     elif request.method == "POST":
-    data = request.get_json()
-    logging.info(f"Incoming webhook data: {data}")
-
-    try:
-        entry = data["entry"][0]
-        changes = entry["changes"][0]
-        value = changes["value"]
-        phone_id = value["metadata"]["phone_number_id"]
-
-        messages = value.get("messages", [])
-        if messages:
-            message = messages[0]
-            sender = message["from"]
-
-            if "text" in message:
-                prompt = message["text"]["body"].strip()
-
-                # ✅ Check if sender is an agent replying to a user
-                user_to_notify_key = f"agent_reply_to:{sender}"
-                user_to_notify = redis_client.get(user_to_notify_key)
-
-                if user_to_notify:
-                    user_to_notify = user_to_notify.decode()
-                    send(f"👤 Agent: {prompt}", user_to_notify, phone_id)
-
-                    # Optionally clear the mapping if it's a one-time reply
-                    redis_client.delete(user_to_notify_key)
-
-                    # Also update the user state to indicate reply has been sent
-                    update_user_state(user_to_notify, {'awaiting_agent_reply': False})
+        data = request.get_json()
+        logging.info(f"Incoming webhook data: {data}")
+    
+        try:
+            entry = data["entry"][0]
+            changes = entry["changes"][0]
+            value = changes["value"]
+            phone_id = value["metadata"]["phone_number_id"]
+    
+            messages = value.get("messages", [])
+            if messages:
+                message = messages[0]
+                sender = message["from"]
+    
+                if "text" in message:
+                    prompt = message["text"]["body"].strip()
+    
+                    # ✅ Check if sender is an agent replying to a user
+                    user_to_notify_key = f"agent_reply_to:{sender}"
+                    user_to_notify = redis_client.get(user_to_notify_key)
+    
+                    if user_to_notify:
+                        user_to_notify = user_to_notify.decode()
+                        send(f"👤 Agent: {prompt}", user_to_notify, phone_id)
+    
+                        # Optionally clear the mapping if it's a one-time reply
+                        redis_client.delete(user_to_notify_key)
+    
+                        # Also update the user state to indicate reply has been sent
+                        update_user_state(user_to_notify, {'awaiting_agent_reply': False})
+                    else:
+                        # Regular user message
+                        message_handler(prompt, sender, phone_id)
                 else:
-                    # Regular user message
-                    message_handler(prompt, sender, phone_id)
-            else:
-                send("Please send a text message", sender, phone_id)
-
-    except Exception as e:
-        logging.error(f"Error processing webhook: {e}", exc_info=True)
-
-    return jsonify({"status": "ok"}), 200
+                    send("Please send a text message", sender, phone_id)
+    
+        except Exception as e:
+            logging.error(f"Error processing webhook: {e}", exc_info=True)
+    
+        return jsonify({"status": "ok"}), 200
 
 
 if __name__ == "__main__":
