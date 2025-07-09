@@ -5,6 +5,15 @@ import os
 redis_client = redis.StrictRedis.from_url(os.environ.get("REDIS_URL"), decode_responses=True)
 
 
+def create_product(name, price, description, default_stock=10):
+        product = Product(name, price, description, stock=default_stock)
+        saved_stock = redis_client.get(f"stock:{name}")
+        if saved_stock is not None:
+            product.stock = int(saved_stock)
+            product.active = product.stock > 0
+        return product
+    
+
 class OrderSystem:
     def __init__(self):
         self.categories = {}
@@ -26,15 +35,6 @@ class OrderSystem:
     
                     return f"✅ Stock for *{product.name}* set to {new_stock}."
         return f"❌ Product *{product_name}* not found."
-
-    
-    def create_product(name, price, description, default_stock=10):
-        product = Product(name, price, description, stock=default_stock)
-        saved_stock = redis_client.get(f"stock:{name}")
-        if saved_stock is not None:
-            product.stock = int(saved_stock)
-            product.active = product.stock > 0
-        return product
 
     
     def populate_products(self):
