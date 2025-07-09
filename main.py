@@ -341,11 +341,10 @@ def handle_ask_quantity(prompt, user_data, phone_id):
         What would you like to do next?
         1. View Groceries Selected
         2. Remove Groceries Selected
-        3. Remove Item
-        4. Add Item\n\n
-        If you'd like to start over send 'hie'\n\n''', user_data['sender'], phone_id)
-            return {'step': 'post_add_menu', 'user': user.to_dict()}
-
+        3. Remove <item>
+        4. Add Item''', user_data['sender'], phone_id)
+    return {'step': 'post_add_menu', 'user': user.to_dict()}
+    
     
 def handle_post_add_menu(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])   
