@@ -1050,6 +1050,7 @@ action_mapping = {
     "choose_delivery_or_pickup": handle_choose_delivery_or_pickup,
     "get_receiver_name": handle_get_receiver_name,
     "get_address": handle_get_address,
+    "get_phone_pickup": handle_get_phone_pickup,
     "get_id": handle_get_id,
     "get_phone": handle_get_phone,
     "confirm_details": handle_confirm_details,
