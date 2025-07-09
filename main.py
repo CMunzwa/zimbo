@@ -922,7 +922,7 @@ def handle_payment_selection(selection, user_data, phone_id):
         
     
         return {
-            'step': 'connect_to_agent',
+            'step': 'ask_place_another_order',
             'user': user.to_dict()
         }
     
