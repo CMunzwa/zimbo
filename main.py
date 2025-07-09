@@ -44,16 +44,6 @@ class User:
         self.cart.append(product)
 
     
-    def view_cart(self):
-        return [
-            {
-                "name": item.name,
-                "quantity": item.quantity,
-                "total_price": item.price * item.quantity
-            }
-            for item in self.cart
-        ]
-
     def remove_from_cart(self, product_name):
         self.cart = [item for item in self.cart if item["product"].name.lower() != product_name.lower()]
 
@@ -337,7 +327,7 @@ def handle_ask_quantity(prompt, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     pd = user_data['selected_product']
 
-    # ✅ Add safeguard here
+    # ✅ Safely handle both dict and Product
     if isinstance(pd, dict):
         name = pd['name']
         price = pd['price']
@@ -346,24 +336,21 @@ def handle_ask_quantity(prompt, user_data, phone_id):
         name = pd.name
         price = pd.price
         description = getattr(pd, 'description', '')
-    
+
     product = Product(name, price, description)
     user.add_to_cart(product, qty)
 
+    # ✅ Update state
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
         'step': 'post_add_menu'
     })
-    # 🛒 Build cart summary
-    cart_items = user.view_cart()
-    cart_text = "\n".join([
-        f"{i+1}. {item.name} x {item.quantity} = ${item.price * item.quantity:.2f}"
-        for i, item in enumerate(user.cart)
-    ])
+
+    # ✅ Use show_cart() for summary
+    cart_text = show_cart(user)
 
     message = f'''🛒 *Item added to your cart!*
-    
-    Here’s your updated cart:
+
     {cart_text}
     
     What would you like to do next?
@@ -371,8 +358,10 @@ def handle_ask_quantity(prompt, user_data, phone_id):
     2. Remove Groceries Selected
     3. Remove Item
     4. Add Item'''
-    
+
     send(message, user_data['sender'], phone_id)
+
+    return {'step': 'post_add_menu', 'user': user.to_dict()}
 
     
     
