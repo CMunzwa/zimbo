@@ -337,13 +337,24 @@ def handle_ask_quantity(prompt, user_data, phone_id):
         'user': user.to_dict(),
         'step': 'post_add_menu'
     })
-    send('''Item added to your cart.
-        What would you like to do next?
-        1. View Groceries Selected
-        2. Remove Groceries Selected
-        3. Remove <item>
-        4. Add Item''', user_data['sender'], phone_id)
-    return {'step': 'post_add_menu', 'user': user.to_dict()}
+    # 🛒 Build cart summary
+    cart_items = user.view_cart()
+    cart_text = "\n".join([f"{i+1}. {item['name']} x {item['quantity']} = ${item['total_price']:.2f}"
+                           for i, item in enumerate(cart_items)])
+    
+    message = f'''🛒 *Item added to your cart!*
+    
+    Here’s your updated cart:
+    {cart_text}
+    
+    What would you like to do next?
+    1. View Groceries Selected
+    2. Remove Groceries Selected
+    3. Remove Item
+    4. Add Item'''
+    
+    send(message, user_data['sender'], phone_id)
+
     
     
 def handle_post_add_menu(prompt, user_data, phone_id):
