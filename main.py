@@ -351,9 +351,11 @@ def handle_ask_quantity(prompt, user_data, phone_id):
     })
     # 🛒 Build cart summary
     cart_items = user.view_cart()
-    cart_text = "\n".join([f"{i+1}. {item['name']} x {item['quantity']} = ${item['total_price']:.2f}"
-                           for i, item in enumerate(cart_items)])
-    
+    cart_text = "\n".join([
+        f"{i+1}. {item.name} x {item.quantity} = ${item.price * item.quantity:.2f}"
+        for i, item in enumerate(user.cart)
+    ])
+
     message = f'''🛒 *Item added to your cart!*
     
     Here’s your updated cart:
