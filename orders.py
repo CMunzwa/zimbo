@@ -7,16 +7,16 @@ class OrderSystem:
 
 
     
-def set_stock(self, product_name, new_stock):
-    for category in self.categories.values():
-        for product in category.products:
-            if not isinstance(product, Product):
-                continue
-            if product.name.lower() == product_name.lower():
-                product.stock = new_stock
-                product.active = new_stock > 0
-                return f"✅ Stock for *{product.name}* set to {new_stock}."
-    return f"❌ Product *{product_name}* not found."
+    def set_stock(self, product_name, new_stock):
+        for category in self.categories.values():
+            for product in category.products:
+                if not isinstance(product, Product):
+                    continue
+                if product.name.lower() == product_name.lower():
+                    product.stock = new_stock
+                    product.active = new_stock > 0
+                    return f"✅ Stock for *{product.name}* set to {new_stock}."
+        return f"❌ Product *{product_name}* not found."
 
 
     
