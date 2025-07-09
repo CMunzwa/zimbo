@@ -340,14 +340,13 @@ def handle_ask_quantity(prompt, user_data, phone_id):
     product = Product(name, price, description)
     user.add_to_cart(product, qty)
 
-    # ✅ Update state
+    # ✅ Always save product as dict
     update_user_state(user_data['sender'], {
         'user': user.to_dict(),
         'selected_product': product.__dict__,
         'step': 'post_add_menu'
     })
 
-    # ✅ Use show_cart() for summary
     cart_text = show_cart(user)
 
     message = f'''🛒 *Item added to your cart!*
