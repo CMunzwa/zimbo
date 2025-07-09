@@ -938,32 +938,32 @@ def handle_payment_selection(selection, user_data, phone_id):
             'user': user.to_dict()
         }
 
-def handle_connect_to_agent(sender, phone_id, payment_method):
+#def handle_connect_to_agent(sender, phone_id, payment_method):
     # Notify agent
     agent_message = (
-        f"🔔 A user needs help with payment.\n"
-        f"User: {sender}\n"
-        f"Selected Method:\n{payment_method}\n\n"
-        f"Please reply here, and your message will be forwarded to the user."
-    )
-    send(agent_message, agent_phone, phone_id)
+        #f"🔔 A user needs help with payment.\n"
+        #f"User: {sender}\n"
+        #f"Selected Method:\n{payment_method}\n\n"
+        #f"Please reply here, and your message will be forwarded to the user."
+    #)
+    #send(agent_message, agent_phone, phone_id)
 
     # Inform the user
-    send("✅ Connecting you to a human agent for more help with payment...", sender, phone_id)
+    #send("✅ Connecting you to a human agent for more help with payment...", sender, phone_id)
 
     # Save state to track that this user is awaiting agent help
-    update_user_state(sender, {
-        'awaiting_agent_reply': True,
-        'last_payment_method': payment_method,
-        'linked_agent': agent_phone
-    })
+    #update_user_state(sender, {
+     #   'awaiting_agent_reply': True,
+      #  'last_payment_method': payment_method,
+       # 'linked_agent': agent_phone
+    #})
 
     # Optionally: store a reverse map agent → user
-    redis_client.setex(f"agent_reply_to:{agent_phone}", 1800, sender)  # expires in 30 min
-    return {
-            'step': 'ask_place_another_order',
-            'user': user.to_dict()
-        }
+    #redis_client.setex(f"agent_reply_to:{agent_phone}", 1800, sender)  # expires in 30 min
+    #return {
+     #       'step': 'ask_place_another_order',
+      #      'user': user.to_dict()
+       # }
 
 
 def handle_ask_place_another_order(prompt, user_data, phone_id):
