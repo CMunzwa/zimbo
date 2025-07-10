@@ -116,7 +116,7 @@ def show_cart(user):
 
 def list_delivery_areas(areas):
     return "\n".join(
-        [f"{i+1}. {area} - ${fee}" for i, (area, fee) in enumerate(areas.items())]
+        [f"{i+1}. {area} - R{fee}" for i, (area, fee) in enumerate(areas.items())]
     )
 
 
@@ -905,8 +905,17 @@ def handle_payment_selection(selection, user_data, phone_id):
 
         if selection in ["2", "3", "4", "5"]:
             # Connect to human agent
+            
+           payment_label = {
+                "2": "Pay at Store (Mukuru WiCode)",
+                "3": "World Remit",
+                "4": "Western Union",
+                "5": "Mukuru Direct Transfer"
+            }.get(selection, f"Payment method {selection}")
+            
             send("You’ll now be connected to a human agent to complete your payment. Please hold on…", sender, phone_id)
-            human_agent("Customer completed order and selected payment method " + selection, user_data, phone_id)
+            human_agent(f"Customer completed order and selected *{payment_label}*", user_data, phone_id)
+
             update_user_state(sender, {
                 'user': user.to_dict(),
                 'step': 'handover_to_agent',
