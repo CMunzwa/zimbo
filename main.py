@@ -904,27 +904,29 @@ def handle_payment_selection(selection, user_data, phone_id):
         user.clear_cart()
 
         if selection in ["2", "3", "4", "5"]:
-            # Connect to human agent
-            
-           payment_label = {
+            # Map payment selection to a readable label
+            payment_label = {
                 "2": "Pay at Store (Mukuru WiCode)",
                 "3": "World Remit",
                 "4": "Western Union",
                 "5": "Mukuru Direct Transfer"
             }.get(selection, f"Payment method {selection}")
-            
+        
             send("You’ll now be connected to a human agent to complete your payment. Please hold on…", sender, phone_id)
+        
             human_agent(f"Customer completed order and selected *{payment_label}*", user_data, phone_id)
-
+        
             update_user_state(sender, {
                 'user': user.to_dict(),
                 'step': 'handover_to_agent',
                 'selected_payment_method': selection
             })
+        
             return {
                 'step': 'handover_to_agent',
                 'user': user.to_dict()
             }
+
         else:
             # Proceed to ask about another order
             send("\nWould you like to place another order? (1.yes/2.no)", sender, phone_id)
