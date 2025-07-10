@@ -1144,6 +1144,11 @@ def get_action(current_state, prompt, user_data, phone_id):
 
 # Message handler
 def message_handler(prompt, sender, phone_id):
+    agent_phone = redis_client.get(f"user_to_agent:{sender}")
+    if agent_phone:
+        send(f"💬 Customer says:\n{prompt}", agent_phone, phone_id)
+        return
+        
     text = prompt.strip().lower()
 
     if text in ["hi", "hey", "hie"]:
