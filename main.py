@@ -19,10 +19,8 @@ phone_id = os.environ.get("PHONE_ID")
 gen_api = os.environ.get("GEN_API")
 owner_phone = os.environ.get("OWNER_PHONE")
 redis_url = os.environ.get("REDIS_URL")
-ADMIN_NUMBERS = [
-    "263719835124",  
-    "263772210415"
-]
+ADMIN_NUMBERS = ["263719835124", "263772210415"]
+AGENT_NUMBERS = ["+263719835124", "+263772210415"]
 
 
 # Redis client setup
@@ -668,7 +666,7 @@ def handle_get_id_pickup(prompt, user_data, phone_id):
         "2. Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
         "3. World Remit\n"
         "4. Western Union\n"
-        "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
+        "5. Mukuru Direct Transfer"
     )
     send(payment_prompt, user_data['sender'], phone_id)
 
@@ -693,7 +691,7 @@ def handle_get_id_pickup(prompt, user_data, phone_id):
             "2. Pay at SHOPRITE/CHECKERS/USAVE/PICK N PAY/ GAME/ MAKRO/ SPAR using Mukuru wicode\n"
             "3. World Remit\n"
             "4. Western Union\n"
-            "5. Mukuru Direct Transfer (DETAILS PROVIDED UPON REQUEST)"
+            "5. Mukuru Direct Transfer"
         )
         send(payment_prompt, user_data['sender'], phone_id)
 
@@ -851,7 +849,7 @@ def handle_confirm_details(prompt, user_data, phone_id):
 def handle_payment_selection(selection, user_data, phone_id):
     user = User.from_dict(user_data['user'])
     order_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-    sender = user_data['sender']  # Get sender from user_data
+    sender = user_data['sender']
 
     # Map selection to payment method
     payment_methods = {
@@ -868,7 +866,6 @@ def handle_payment_selection(selection, user_data, phone_id):
 
     payment_text = payment_methods.get(selection)
     if payment_text:
-        # Save order to Redis
         order_data = {
             'order_id': order_id,
             'user_data': user.to_dict(),
@@ -877,14 +874,10 @@ def handle_payment_selection(selection, user_data, phone_id):
             'total_amount': user.get_cart_total(),
             'payment_method': payment_text
         }
-        
-        # Store order in Redis with expiration (7 days)
+
         redis_client.setex(f"order:{order_id}", 604800, json.dumps(order_data))
-        
-        # Also store order ID in user's order list
         redis_client.lpush(f"user_orders:{sender}", order_id)
-    
-        # Notify owner
+
         owner_message = (
             f"New Order #{order_id}\n"
             f"From: {user.payer_name} ({user.payer_phone})\n"
@@ -896,8 +889,7 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"Items:\n{show_cart(user)}"
         )
         send(owner_message, owner_phone, phone_id)
-    
-        # Send confirmation to user
+
         confirmation_message = (
             f"Order placed! 🛒\nOrder ID: {order_id}\n\n"
             f"{show_cart(user)}\n\n"
@@ -905,24 +897,38 @@ def handle_payment_selection(selection, user_data, phone_id):
             f"ID: {user.checkout_data['receiver_id']}\n"
             f"Address: {user.checkout_data.get('address', 'N/A')}\n"
             f"Phone: {user.checkout_data.get('phone', 'N/A')}\n\n"
-            f"Payment Method: {payment_text}\n\n"
-            f"Would you like to place another order? (1.yes/2.no)"
+            f"Payment Method: {payment_text}"
         )
         send(confirmation_message, sender, phone_id)
 
-        # Clear cart and update state
         user.clear_cart()
-        update_user_state(sender, {
-            'user': user.to_dict(),
-            'step': 'ask_place_another_order',
-            'selected_payment_method': selection
-        })
-    
-        return {
-            'step': 'ask_place_another_order',
-            'user': user.to_dict()
-        }
-    
+
+        if selection in ["2", "3", "4", "5"]:
+            # Connect to human agent
+            send("You’ll now be connected to a human agent to complete your payment. Please hold on…", sender, phone_id)
+            human_agent("Customer completed order and selected payment method " + selection, user_data, phone_id)
+            update_user_state(sender, {
+                'user': user.to_dict(),
+                'step': 'handover_to_agent',
+                'selected_payment_method': selection
+            })
+            return {
+                'step': 'handover_to_agent',
+                'user': user.to_dict()
+            }
+        else:
+            # Proceed to ask about another order
+            send("\nWould you like to place another order? (1.yes/2.no)", sender, phone_id)
+            update_user_state(sender, {
+                'user': user.to_dict(),
+                'step': 'ask_place_another_order',
+                'selected_payment_method': selection
+            })
+            return {
+                'step': 'ask_place_another_order',
+                'user': user.to_dict()
+            }
+
     else:
         send("Invalid selection. Please enter a number between 1 and 5.", sender, phone_id)
         update_user_state(sender, {
@@ -934,7 +940,79 @@ def handle_payment_selection(selection, user_data, phone_id):
             'step': 'await_payment_selection',
             'user': user.to_dict()
         }
-        
+
+
+def human_agent(prompt: str, user_data: dict, phone_id: str) -> dict:
+    """
+    Connects a customer to a human agent and stores routing info to forward agent replies.
+    """
+    sender = user_data['sender']
+    user = User.from_dict(user_data['user'])
+
+    # Rotate through agents
+    agent_index = hash(sender) % len(AGENT_NUMBERS)
+    agent_phone = AGENT_NUMBERS[agent_index]
+
+    message = (
+        f"🧑‍💼 New Customer Assigned 🧑‍💼\n\n"
+        f"Customer: {user.payer_name} ({user.payer_phone})\n"
+        f"WhatsApp: {sender}\n"
+        f"Receiver: {user.checkout_data.get('receiver_name', 'N/A')}\n"
+        f"Address: {user.checkout_data.get('address', 'N/A')}\n"
+        f"ID: {user.checkout_data.get('receiver_id', 'N/A')}\n"
+        f"Phone: {user.checkout_data.get('phone', 'N/A')}\n\n"
+        f"📝 Reason: {prompt}\n\n"
+        f"Reply here and the message will be forwarded to the customer."
+    )
+
+    send(message, agent_phone, phone_id)
+
+    # Save routing info for forwarding replies
+    redis_client.set(f"handover:{agent_phone}", sender)
+    redis_client.set(f"user_to_agent:{sender}", agent_phone)
+
+    return {'status': 'agent_notified'}
+
+
+def handle_incoming_message(sender: str, message: str, phone_id: str):
+    # Check if this is an agent
+    user_number = redis_client.get(f"handover:{sender}")
+    if user_number:
+        user_number = user_number.decode()
+
+        if message.strip().lower() == "exit":
+            # End the session
+            redis_client.delete(f"handover:{sender}")
+            redis_client.delete(f"user_to_agent:{user_number}")
+
+            # Notify both parties
+            send("✅ You have ended the chat with the customer. The bot will now take over.", sender, phone_id)
+            send("🔄 The agent has ended the chat. You are now back with the bot assistant.\nWould you like to place another order? (1.yes/2.no)", user_number, phone_id)
+
+            # Optionally reset user state
+            update_user_state(user_number, {'step': 'ask_place_another_order'})
+            return
+
+        # Forward agent message to user
+        forward = f"💬 Agent says:\n{message}"
+        send(forward, user_number, phone_id)
+        return
+
+    # Not from agent — delegate to user handler
+    handle_user_message(sender, message, phone_id)
+
+
+def handle_user_message(sender: str, message: str, phone_id: str):
+    # Check if this user is in a handover session
+    agent_phone = redis_client.get(f"user_to_agent:{sender}")
+    if agent_phone:
+        forward = f"💬 Customer says:\n{message}"
+        send(forward, agent_phone.decode(), phone_id)
+        return
+
+    # Proceed with normal bot logic
+    process_bot_step(sender, message, phone_id)
+
 
 def handle_ask_place_another_order(prompt, user_data, phone_id):
     if prompt.lower() in ["yes", "y", "1"]:
