@@ -973,7 +973,7 @@ def human_agent(prompt: str, user_data: dict, phone_id: str) -> dict:
         f"ID: {user.checkout_data.get('receiver_id', 'N/A')}\n"
         f"Phone: {user.checkout_data.get('phone', 'N/A')}\n\n"
         f"📝 Reason: {prompt}\n\n"
-        f"Reply here and the message will be forwarded to the customer."
+        f"Reply here and the message will be forwarded to the customer.\nReply 'exit' if you want to handover the chat back to bot."
     )
 
     send(message, agent_phone, phone_id)
