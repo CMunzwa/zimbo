@@ -306,7 +306,7 @@ class OrderSystem:
                 # ✅ Filter only available products
                 available_products = [p for p in category.products if p.is_available()]
                 for i, product in enumerate(available_products, start=1):
-                    line = f"{i}. {product.name} - ${product.price:.2f}"
+                    line = f"{i}. {product.name} - R{product.price:.2f}"
                     product_lines.append(line)
                 products_by_cat[category.name] = "\n".join(product_lines)
             return products_by_cat
