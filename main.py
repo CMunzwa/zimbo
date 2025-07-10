@@ -978,8 +978,7 @@ def handle_incoming_message(sender: str, message: str, phone_id: str):
     # Check if this is an agent
     user_number = redis_client.get(f"handover:{sender}")
     if user_number:
-        user_number = user_number.decode()
-
+        
         if message.strip().lower() == "exit":
             # End the session
             redis_client.delete(f"handover:{sender}")
@@ -1278,8 +1277,7 @@ def webhook():
                     # 🔍 Check if the sender is an agent in an active handover
                     user_number = redis_client.get(f"handover:{sender}")
                     if user_number:
-                        user_number = user_number.decode()
-
+                        
                         if prompt.lower() == "exit":
                             # End session
                             redis_client.delete(f"handover:{sender}")
