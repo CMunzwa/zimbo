@@ -1259,7 +1259,7 @@ def webhook():
 
     elif request.method == "POST":
         data = request.get_json()
-        logging.info(f"Incoming webhook data: {data}")
+        logging.info(f"📩 Incoming webhook data: {json.dumps(data)}")
 
         try:
             entry = data["entry"][0]
@@ -1270,17 +1270,41 @@ def webhook():
             messages = value.get("messages", [])
             if messages:
                 message = messages[0]
-                sender = message["from"]
+                sender = message["from"]  # The phone number that sent the message
 
                 if "text" in message:
                     prompt = message["text"]["body"].strip()
-                    message_handler(prompt, sender, phone_id)
+
+                    # 🔍 Check if the sender is an agent in an active handover
+                    user_number = redis_client.get(f"handover:{sender}")
+                    if user_number:
+                        user_number = user_number.decode()
+
+                        if prompt.lower() == "exit":
+                            # End session
+                            redis_client.delete(f"handover:{sender}")
+                            redis_client.delete(f"user_to_agent:{user_number}")
+
+                            send("✅ You have ended the chat with the customer. The bot will now take over.", sender, phone_id)
+                            send("🔄 The agent has ended the chat. You are now back with the bot assistant.\nWould you like to place another order? (1.yes/2.no)", user_number, phone_id)
+
+                            update_user_state(user_number, {'step': 'ask_place_another_order'})
+                        else:
+                            # Forward agent message to user
+                            forward = f"💬 Agent says:\n{prompt}"
+                            send(forward, user_number, phone_id)
+                    else:
+                        # 🤖 This is a user, not an agent
+                        message_handler(prompt, sender, phone_id)
+
                 else:
-                    send("Please send a text message", sender, phone_id)
+                    send("❗Please send a text message.", sender, phone_id)
+
         except Exception as e:
-            logging.error(f"Error processing webhook: {e}", exc_info=True)
+            logging.error(f"❌ Error processing webhook: {e}", exc_info=True)
 
         return jsonify({"status": "ok"}), 200
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
