@@ -375,9 +375,9 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         user.clear_cart()
         update_user_state(user_data['sender'], {
             'user': user.to_dict(),
-            'step': 'post_add_menu'
+            'step': 'post_add_menu_remove'
         })
-        send("Cart cleared.\nWhat would you like to do next?\n1 View Groceries Selected\n4 Add Item", user_data['sender'], phone_id)
+        send("Cart cleared.\nWhat would you like to do next?\n1 Continue Shopping\n2 Logout", user_data['sender'], phone_id)
         return {
             'step': 'post_add_menu',
             'user': user.to_dict()
@@ -400,6 +400,64 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         }
 
     elif prompt.lower() in ["add", "add item", "add another", "add more", "4"]:
+        order_system = OrderSystem()
+        categories_products = order_system.get_products_by_category()
+        
+        # 🧠 Try to continue from previous state
+        category_names = user_data.get("category_names") or list(categories_products.keys())
+        current_index = user_data.get("current_category_index", 0)
+        
+        # Prevent out-of-range errors
+        if current_index >= len(category_names):
+            current_index = 0
+        
+        current_category = category_names[current_index]
+        first_products = categories_products.get(current_category, "No products found.")
+
+        update_user_state(user_data['sender'], {
+            'step': 'choose_product',
+            'user': user.to_dict(),
+            'category_names': category_names,
+            'current_category_index': current_index
+        })
+    
+        send(
+            f"Sure! Here are products from *{current_category}*:\n"
+            f"{first_products}\n\n"
+            f"If you're done shopping in the *{current_category}* category.\n"
+            "Type 'more' to see the next category or 'back' to see the previous one.",
+            user_data['sender'],
+            phone_id
+        )
+
+    
+        return {
+            'step': 'choose_product',
+            'user': user.to_dict()
+        }
+
+
+def handle_post_add_menu_remove(prompt, user_data, phone_id):
+    user = User.from_dict(user_data['user'])   
+   
+    if prompt.lower() in ["logout", "2"]:
+        user = User.from_dict(user_data['user'])
+        update_user_state(user_data['sender'], {
+        'user': user.to_dict(),
+        'step': 'end'
+    })
+        send("Thank you for shopping with us, have a good day!", user_data['sender'], phone_id)
+        user_data['sender'],
+        phone_id
+        return 
+        
+        update_user_state(user_data['sender'], {
+            'step': 'end',
+            'user': user.to_dict()
+        })
+    
+       
+    elif prompt.lower() in ["continue", "continue shopping", "1"]:
         order_system = OrderSystem()
         categories_products = order_system.get_products_by_category()
         
@@ -1131,6 +1189,7 @@ action_mapping = {
     "choose_product": handle_choose_product,
     "ask_quantity": handle_ask_quantity,
     "post_add_menu": handle_post_add_menu,
+    "post_add_menu_remove": handle_post_add_menu_remove,
     "get_area": handle_get_area,
     "ask_checkout": handle_ask_checkout,
     "await_remove_item": handle_await_remove_item,
