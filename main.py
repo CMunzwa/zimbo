@@ -379,7 +379,7 @@ def handle_post_add_menu(prompt, user_data, phone_id):
         })
         send("Cart cleared.\nWhat would you like to do next?\n1 Continue Shopping\n2 Logout", user_data['sender'], phone_id)
         return {
-            'step': 'post_add_menu',
+            'step': 'post_add_menu_remove',
             'user': user.to_dict()
         }
     elif prompt.lower() in ["3", "remove"]:
