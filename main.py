@@ -20,7 +20,7 @@ gen_api = os.environ.get("GEN_API")
 owner_phone = os.environ.get("OWNER_PHONE")
 redis_url = os.environ.get("REDIS_URL")
 ADMIN_NUMBERS = ["263719835124", "263785913291", "263777113588", "263785019494"]
-AGENT_NUMBERS = ["263785019494", "263777113588"]
+AGENT_NUMBERS = ["263785019494"]
 
 
 # Redis client setup
